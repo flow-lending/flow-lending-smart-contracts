@@ -1,3 +1,258 @@
+// ============================================================================
+// Transaction Flows & Action Examples for Pool Contract
+// ============================================================================
+//
+// 1. ApplyDeposit (User deposits assets to the pool)
+// --------------------------------------------------
+// Purpose:
+//   - Users deposit assets into the pool and receive cTokens in return.
+//
+// Inputs:
+//   - Pool UTxO (with PoolDatum)
+//   - Order UTxO(s) (with ODeposit OrderDatum)
+//   - Batcher license UTxO
+//
+// Outputs:
+//   - Updated Pool UTxO (with increased total_supplied and total_ctoken)
+//   - User UTxO(s) (with cTokens and minimum ADA)
+//   - Updated batcher license UTxO
+//
+// Reference Inputs:
+//   - PoolInfo UTxO (with PoolInfoDatum)
+//
+// Mint:
+//   - cTokens are minted for the user(s)
+//
+// Redeemer:
+//   - ApplyDeposit { own_input_idx, own_output_idx, pool_info_idx, license_idx, order_indices }
+//
+// Checks:
+//   - Pool UTxO and PoolInfo NFT are present and consistent
+//   - Pool NFT is preserved
+//   - Batcher license is valid for the transaction time
+//   - Each deposit order is valid (amount, user address, fees)
+//   - Correct cToken minting and pool state update
+//   - Asset transfer and accounting are correct
+//
+// Example:
+//   - User deposits 10 units of the pool asset.
+//   - Inputs: [pool_input, order_input, license_input]
+//   - Reference Inputs: [pool_info_input]
+//   - Outputs: [pool_output, user_out, license_output]
+//   - Mint: cToken minted for user (amount: 10)
+//   - Redeemer: ApplyDeposit { own_input_idx: 0, own_output_idx: 0, pool_info_idx: 0, license_idx: 2, order_indices: [(1, 1)] }
+//
+// ----------------------------------------------------------------------------
+//
+// 2. ApplyWithdraw (User withdraws assets from the pool)
+// ------------------------------------------------------
+// Purpose:
+//   - Users burn cTokens to withdraw their share of the pool assets.
+//
+// Inputs:
+//   - Pool UTxO (with PoolDatum)
+//   - Order UTxO(s) (with OWithdraw OrderDatum)
+//   - Batcher license UTxO
+//
+// Outputs:
+//   - Updated Pool UTxO (with decreased total_supplied and total_ctoken)
+//   - User UTxO(s) (with withdrawn assets and minimum ADA)
+//   - Updated batcher license UTxO
+//
+// Reference Inputs:
+//   - PoolInfo UTxO (with PoolInfoDatum)
+//
+// Mint:
+//   - cTokens are burned from the user(s)
+//
+// Redeemer:
+//   - ApplyWithdraw { own_input_idx, own_output_idx, pool_info_idx, license_idx, order_indices }
+//
+// Checks:
+//   - Pool UTxO and PoolInfo NFT are present and consistent
+//   - Pool NFT is preserved
+//   - Batcher license is valid for the transaction time
+//   - Each withdraw order is valid (amount, user address, fees)
+//   - Correct cToken burning and pool state update
+//   - Asset transfer and accounting are correct
+//
+// Example:
+//   - User withdraws 10 units of the pool asset.
+//   - Inputs: [pool_input, order_input, license_input]
+//   - Reference Inputs: [pool_info_input]
+//   - Outputs: [pool_output, user_out, license_output]
+//   - Mint: cToken burned from user (amount: -10)
+//   - Redeemer: ApplyWithdraw { ... }
+//
+// ----------------------------------------------------------------------------
+//
+// 3. ApplyBorrow (User borrows assets from the pool)
+// --------------------------------------------------
+// Purpose:
+//   - Users borrow assets from the pool by providing collateral, minting vault auth tokens.
+//
+// Inputs:
+//   - Pool UTxO (with PoolDatum)
+//   - Order UTxO(s) (with OBorrow OrderDatum)
+//   - Batcher license UTxO
+//
+// Outputs:
+//   - Updated Pool UTxO (with increased total_borrowed)
+//   - User UTxO(s) (with borrowed assets)
+//   - Vault UTxO(s) (with VaultDatum and vault auth token, collateral)
+//   - Updated batcher license UTxO
+//
+// Reference Inputs:
+//   - PoolInfo UTxO (with PoolInfoDatum)
+//   - Oracle UTxO(s) (with OracleDatum)
+//
+// Mint:
+//   - Vault auth tokens are minted for vault UTxO(s)
+//
+// Redeemer:
+//   - ApplyBorrow { own_input_idx, own_output_idx, pool_info_idx, license_idx, order_indices }
+//
+// Checks:
+//   - Pool UTxO and PoolInfo NFT are present and consistent
+//   - Pool NFT is preserved
+//   - Batcher license is valid for the transaction time
+//   - Each borrow order is valid (principal, collateral, LTV, user address)
+//   - Collateralization and LTV thresholds are enforced
+//   - Vault datum is correct and vault auth token is minted
+//   - Pool state is updated correctly
+//   - Asset transfer and accounting are correct
+//
+// Example:
+//   - User borrows 10 units of the pool asset, provides collateral.
+//   - Inputs: [pool_input, order_input, license_input]
+//   - Reference Inputs: [pool_info_input, oracle_input]
+//   - Outputs: [pool_output, user_out, vault_out, license_output]
+//   - Mint: vault auth token minted for user
+//   - Redeemer: ApplyBorrow { ... }
+//
+// ----------------------------------------------------------------------------
+//
+// 4. ApplyRepay (User repays borrowed assets)
+// -------------------------------------------
+// Purpose:
+//   - Users repay borrowed assets, burning vault auth tokens and updating pool/vault state.
+//
+// Inputs:
+//   - Pool UTxO (with PoolDatum)
+//   - Order UTxO(s) (with ORepay OrderDatum)
+//   - Vault UTxO(s) (with VaultDatum and vault auth token)
+//   - Batcher license UTxO
+//
+// Outputs:
+//   - Updated Pool UTxO (with decreased total_borrowed, updated reserve)
+//   - User UTxO(s) (with repaid assets and minimum ADA)
+//   - Updated batcher license UTxO
+//
+// Reference Inputs:
+//   - PoolInfo UTxO (with PoolInfoDatum)
+//   - Oracle UTxO(s) (with OracleDatum)
+//
+// Mint:
+//   - Vault auth tokens are burned from vault UTxO(s)
+//
+// Redeemer:
+//   - ApplyRepay { own_input_idx, own_output_idx, pool_info_idx, license_idx, order_indices }
+//
+// Checks:
+//   - Pool UTxO and PoolInfo NFT are present and consistent
+//   - Pool NFT is preserved
+//   - Batcher license is valid for the transaction time
+//   - Each repay order is valid (borrow ID, user, timing, fees)
+//   - Vault datum is correct and vault auth token is burned
+//   - Pool state is updated correctly (including reserve/profit)
+//   - Asset transfer and accounting are correct
+//
+// Example:
+//   - User repays 10 units of the pool asset.
+//   - Inputs: [pool_input, order_input, vault_input, license_input]
+//   - Reference Inputs: [pool_info_input, oracle_input]
+//   - Outputs: [pool_output, user_out, updated_vault_out, license_output]
+//   - Mint: vault auth token burned from user
+//   - Redeemer: ApplyRepay { ... }
+//
+// ----------------------------------------------------------------------------
+//
+// 5. ApplyLiquidate (Liquidation of undercollateralized vaults)
+// -------------------------------------------------------------
+// Purpose:
+//   - Liquidate undercollateralized vaults, burning vault auth tokens and updating pool/vault state.
+//
+// Inputs:
+//   - Pool UTxO (with PoolDatum)
+//   - Order UTxO(s) (with OLiquidate OrderDatum)
+//   - Vault UTxO(s) (with VaultDatum and vault auth token)
+//   - Batcher license UTxO
+//
+// Outputs:
+//   - Updated Pool UTxO (with decreased total_borrowed, updated reserve)
+//   - Updated batcher license UTxO
+//
+// Reference Inputs:
+//   - PoolInfo UTxO (with PoolInfoDatum)
+//   - Oracle UTxO(s) (with OracleDatum)
+//
+// Mint:
+//   - Vault auth tokens are burned from vault UTxO(s)
+//
+// Redeemer:
+//   - ApplyLiquidate { own_input_idx, own_output_idx, pool_info_idx, license_idx, order_indices }
+//
+// Checks:
+//   - Pool UTxO and PoolInfo NFT are present and consistent
+//   - Pool NFT is preserved
+//   - Batcher license is valid for the transaction time
+//   - Each liquidation order is valid (vault is undercollateralized, LTV)
+//   - Vault datum is correct and vault auth token is burned
+//   - Pool state is updated correctly (including reserve/profit)
+//   - Asset transfer and accounting are correct
+//
+// Example:
+//   - Vault is liquidated due to undercollateralization.
+//   - Inputs: [pool_input, order_input, vault_input, license_input]
+//   - Reference Inputs: [pool_info_input, oracle_input]
+//   - Outputs: [pool_output, updated_vault_out, license_output]
+//   - Mint: vault auth token burned from user
+//   - Redeemer: ApplyLiquidate { ... }
+//
+// ----------------------------------------------------------------------------
+//
+// 6. Close (Admin closes the pool)
+// -------------------------------
+// Purpose:
+//   - Admin closes the pool, burning pool NFT and pool info NFT.
+//
+// Inputs:
+//   - Pool UTxO (with PoolDatum)
+//
+// Outputs:
+//   - Pool UTxO and PoolInfo UTxO are spent and NFTs are burned
+//
+// Reference Inputs:
+//   - None required
+//
+// Mint:
+//   - Pool NFT and PoolInfo NFT are burned
+//
+// Redeemer:
+//   - Close
+//
+// Checks:
+//   - Only admin can perform this action (admin signature required)
+//
+// Example:
+//   - Admin closes the pool and burns NFTs.
+//   - Inputs: [pool_input]
+//   - Outputs: []
+//   - Mint: pool NFT and pool info NFT burned
+//   - Redeemer: Close
+//
+// ================
+
 use aiken/collection/dict
 use aiken/collection/list
 use aiken/interval.{Finite, Interval, IntervalBound}

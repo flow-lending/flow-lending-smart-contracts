@@ -1,3 +1,26 @@
+// Validator to mint or burn liquidity provider (cToken) tokens.
+//
+// This validator delegates logic to the pool validator when spending the pool UTxO to apply deposit or withdraw actions.
+//
+// Redeemer actions and their validation logic:
+//
+// CTokenRedeemer:
+//   - pool_in_idx: Int
+//       * Specifies the index of the pool input in the transaction inputs.
+//       * Used to reference the correct pool UTxO for validation.
+//
+// Validation checks performed by the ctoken validator:
+//   - Ensures the referenced pool input exists at the given index.
+//   - Ensures the pool input contains a valid inline datum of type PoolDatum.
+//   - Ensures the pool_id in the datum matches the expected pool_id in parameters.
+//   - Ensures the correct PoolRedeemer is present for the referenced pool input.
+//   - Ensures the pool NFT is present in the pool input value.
+//   - Only allows minting/burning cTokens if the pool redeemer is one of:
+//       * ApplyDeposit: Validates minting cTokens for a deposit action.
+//       * ApplyWithdraw: Validates burning cTokens for a withdraw action.
+//       * Close: Allows burning cTokens when closing the pool.
+//   - Any other redeemer action is rejected.
+
 use aiken/collection/list
 use aiken/collection/pairs
 use cardano/assets.{PolicyId}

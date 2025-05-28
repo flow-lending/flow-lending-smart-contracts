@@ -1,3 +1,26 @@
+// Validator to mint authorization tokens for pool and pool info NFTs, ensuring valid datums.
+//
+// This validator is parameterized by the pool id and admin public key hash.
+//
+// Redeemer actions and their validation logic:
+//
+// MintRedeemer:
+//   - Mint { pool_info_out_idx: Int, pool_out_idx: Int }
+//       * Mints both the pool info NFT and the pool NFT.
+//       * Checks:
+//           - The transaction is signed by the admin (params.admin_pkh).
+//           - The correct assets (pool info NFT and pool NFT) are minted (quantity 1 each).
+//           - The referenced outputs at pool_info_out_idx and pool_out_idx exist in transaction outputs.
+//           - Each output contains the correct NFT and only two assets in total.
+//           - Each output contains a valid inline datum:
+//               - PoolInfoDatum: Must pass is_pool_info_datum_valid (checks for positive and valid parameters).
+//               - PoolDatum: Must pass is_pool_datum_valid (checks for initial zeroed state).
+//           - The minted assets exactly match the expected merged_mint value.
+//   - Burn
+//       * Burns the pool info NFT and/or pool NFT.
+//       * Checks:
+//           - The transaction is signed by the admin (params.admin_pkh).
+
 use aiken/collection/dict
 use aiken/collection/list
 use aiken/interval

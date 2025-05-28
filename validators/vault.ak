@@ -1,3 +1,127 @@
+// Validator controls collateral for borrowing. Vault UTxO can be spent to apply repay or liquidate actions, or to add collateral to the vault.
+//
+// This validator is parameterized by admin public key hash, pool id, and pool NFT.
+//
+// Redeemer actions and their validation logic:
+//
+// VaultRedeemer:
+//   - VSpend { pool_in_idx: Int }
+//       * Spends the vault UTxO in response to a pool action (repay, liquidate, or close).
+//       * Checks:
+//           - The referenced pool input exists at pool_in_idx in transaction inputs.
+//           - The pool input contains a valid PoolDatum inline datum.
+//           - The pool_id in the datum matches the expected pool_id in parameters.
+//           - The correct PoolRedeemer is present for the referenced pool input.
+//           - The pool NFT is present in the pool input value.
+//           - Only allows spending if the pool redeemer is one of:
+//               * ApplyRepay: Repayment of a loan.
+//               * ApplyLiquidate: Liquidation of collateral.
+//               * Close: Pool closure.
+//           - Any other redeemer action is rejected.
+//
+//   - VAddCollateral { own_input_idx: Int, own_output_idx: Int, add_amount: Int }
+//       * Adds collateral to the vault.
+//       * Checks:
+//           - The referenced own input and output exist at the given indices.
+//           - The input and output refer to the same vault (output_reference matches own_outref).
+//           - The output contains a valid VaultDatum inline datum.
+//           - All fields in the datum remain unchanged except for collateral_amount, which increases by add_amount.
+//           - The output value matches the expected value after adding the collateral.
+//           - The transaction is signed by the vault owner (owner_pkh).
+//
+//   - VSlash
+//       * Allows the admin to slash (seize) the vault collateral.
+//       * Checks:
+//           - The transaction is signed by the admin (params.admin_pkh).
+//
+// ## Transaction Flows & Action Examples
+//
+// ### 1. Add Collateral to Vault
+//
+// **Purpose:**
+// - The vault owner increases the collateral in their vault.
+//
+// **Inputs:**
+// - Vault UTxO (with current collateral and VaultDatum).
+//
+// **Outputs:**
+// - New vault UTxO (with increased collateral and updated VaultDatum).
+//
+// **Reference Inputs:**
+// - None required.
+//
+// **Redeemer:**
+// - `VAddCollateral { own_input_idx, own_output_idx, add_amount }`
+//
+// **Checks:**
+// - The input and output refer to the same vault (output_reference matches own_outref).
+// - All fields in the datum remain unchanged except `collateral_amount`, which increases by `add_amount`.
+// - The output value matches the expected value after adding collateral.
+// - The transaction is signed by the vault owner.
+//
+// **Example:**
+// - Vault UTxO with 1,000 collateral.
+// - Owner adds 100 collateral.
+// - Output vault UTxO has 1,100 collateral.
+// - Redeemer: `VAddCollateral { own_input_idx: 0, own_output_idx: 0, add_amount: 100 }`
+//
+// ---
+//
+// ### 2. Repay or Liquidate Vault
+//
+// **Purpose:**
+// - The vault UTxO is spent as part of a pool action (repay, liquidate, or close).
+//
+// **Inputs:**
+// - Vault UTxO (with VaultDatum).
+// - Pool UTxO (with PoolDatum).
+//
+// **Outputs:**
+// - As required by the pool operation (e.g., vault closed, collateral released or seized).
+//
+// **Reference Inputs:**
+// - None required.
+//
+// **Redeemer:**
+// - `VSpend { pool_in_idx }`
+//
+// **Checks:**
+// - The referenced pool input exists and contains a valid PoolDatum.
+// - The pool_id matches.
+// - The correct PoolRedeemer is present (must be `ApplyRepay`, `ApplyLiquidate`, or `Close`).
+// - The pool NFT is present in the pool input value.
+//
+// **Example:**
+// - Vault is being repaid or liquidated as part of a pool operation.
+// - Redeemer: `VSpend { pool_in_idx: 1 }`
+//
+// ---
+//
+// ### 3. Slash Vault
+//
+// **Purpose:**
+// - The admin seizes (slashes) the vault collateral.
+//
+// **Inputs:**
+// - Vault UTxO (with VaultDatum).
+//
+// **Outputs:**
+// - As required by the slashing logic (e.g., collateral moved to admin or protocol address).
+//
+// **Reference Inputs:**
+// - None required.
+//
+// **Redeemer:**
+// - `VSlash`
+//
+// **Checks:**
+// - The transaction is signed by the admin (params.admin_pkh).
+//
+// **Example:**
+// - Admin slashes a vault due to protocol violation.
+// - Redeemer: `VSlash`
+//
+
 use aiken/collection/dict
 use aiken/collection/list
 use aiken/collection/pairs

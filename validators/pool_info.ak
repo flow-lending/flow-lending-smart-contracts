@@ -1,3 +1,15 @@
+// Pool Info Validator controls the pool info UTxO containing all the pool parameters.
+//
+// This validator is parameterized by the admin public key hash (admin_pkh).
+//
+// Redeemer actions and their validation logic:
+//   - spend (default action):
+//       * Allows spending of the pool info UTxO.
+//       * Checks:
+//           - The transaction is signed by the admin (params.admin_pkh).
+//           - No other checks are performed; only the admin can update or move the pool info UTxO.
+//       * Used for updating pool parameters or moving the pool info UTxO under admin control.
+
 use aiken/collection/dict
 use aiken/collection/list
 use aiken/interval

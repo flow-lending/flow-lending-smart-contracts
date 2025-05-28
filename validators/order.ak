@@ -1,3 +1,34 @@
+// Order validator where user orders (deposit, withdraw, borrow, repay, liquidate) are held.
+//
+// This validator is parameterized by pool id and pool NFT for a specific single pool asset.
+//
+// Orders can be:
+//   - Applied to the pool: If the pool UTxO is spent, logic validation is delegated to the pool validator.
+//   - Cancelled by the user: Allows the order owner to cancel their order.
+//
+// Redeemer actions and their validation logic:
+//
+// OrderRedeemer:
+//   - Apply { pool_in_idx: Int }
+//       * Applies the order to the pool by referencing the pool input at the given index.
+//       * Checks:
+//           - The referenced pool input exists at pool_in_idx in transaction inputs.
+//           - The pool input contains a valid PoolDatum inline datum.
+//           - The pool_id in the datum matches the expected pool_id in parameters.
+//           - The pool NFT is present in the pool input value.
+//       * Delegates further validation to the pool validator.
+//
+//   - Cancel { order_in_idx: Int }
+//       * Cancels the order by referencing the order input at the given index.
+//       * Checks:
+//           - The referenced order input exists at order_in_idx in transaction inputs.
+//           - The order input's output reference matches the validator's own reference.
+//           - The order input contains a valid OrderDatum inline datum.
+//           - The pool_id in the order datum matches the expected pool_id in parameters.
+//           - The transaction is signed by the order owner (o_owner_pkh).
+//       * Allows only the order owner to cancel their order.
+
+
 use aiken/collection/list
 use cardano/assets
 use cardano/transaction.{InlineDatum, OutputReference, Transaction}

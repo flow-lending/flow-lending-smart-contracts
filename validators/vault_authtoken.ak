@@ -1,3 +1,28 @@
+// Mint/burn authorization token for vault UTxO to apply borrow, repay, or liquidate actions.
+// Delegates logic to the pool validator.
+//
+// This validator is parameterized by the pool id and pool NFT for a specific pool.
+//
+// Redeemer actions and their validation logic:
+//
+// VaultAuthTokenRedeemer:
+//   - pool_in_idx: Int
+//       * Specifies the index of the pool input in the transaction inputs.
+//       * Used to reference the correct pool UTxO for validation.
+//
+// Validation checks performed by the vault_authtoken validator:
+//   - Ensures the referenced pool input exists at the given index.
+//   - Ensures the pool input contains a valid inline datum of type PoolDatum.
+//   - Ensures the pool_id in the datum matches the expected pool_id in parameters.
+//   - Ensures the correct PoolRedeemer is present for the referenced pool input.
+//   - Ensures the pool NFT is present in the pool input value.
+//   - Only allows minting/burning vault auth tokens if the pool redeemer is one of:
+//       * ApplyBorrow: Validates minting/burning for a borrow action.
+//       * ApplyRepay: Validates minting/burning for a repay action.
+//       * ApplyLiquidate: Validates minting/burning for a liquidation action.
+//       * Close: Allows burning when closing the pool.
+//   - Any other redeemer action is rejected.
+
 use aiken/collection/list
 use aiken/collection/pairs
 use cardano/assets.{PolicyId}

@@ -1,3 +1,27 @@
+// batcher validator controls logic to mint batcher token which is used to apply order to the pool in batch
+//
+// Redeemer actions and their validation logic:
+//
+// LicenseRedeemer:
+//   - Mint { dead_line: ByteArray }:
+//       Checks:
+//         * The transaction is signed by the admin (params.admin_pkh).
+//         * The minting operation exactly matches (policy_id, dead_line, 1).
+//         * Used to mint a new batcher token with a deadline for batch operations.
+//   - Burn:
+//       Checks:
+//         * The transaction is signed by the admin (params.admin_pkh).
+//         * All minted quantities for the policy are negative (i.e., burning tokens).
+//         * Used to burn (destroy) batcher tokens.
+//
+// withdraw:
+//   Checks:
+//     * The transaction is signed by the admin (params.admin_pkh).
+//
+// publish:
+//   Checks:
+//     * The transaction is signed by the admin (params.admin_pkh).
+
 use aiken/collection/list
 use cardano/address.{Credential}
 use cardano/assets.{flatten}
