@@ -1134,7 +1134,7 @@ validator pool(params: PoolParams) {
         when pool_info_datum.pool_asset.policy_id == assets.ada_policy_id is {
           True -> {
             expect list.length(assets.flatten(own_output.value)) == 2
-            assets.lovelace_of(own_output.value) == assets.lovelace_of(
+            assets.lovelace_of(own_output.value) >= assets.lovelace_of(
               own_input.output.value,
             ) + total_payment
           }
@@ -1148,7 +1148,7 @@ validator pool(params: PoolParams) {
               own_output.value,
               pool_info_datum.pool_asset.policy_id,
               pool_info_datum.pool_asset.asset_name,
-            ) == assets.quantity_of(
+            ) >= assets.quantity_of(
               own_input.output.value,
               pool_info_datum.pool_asset.policy_id,
               pool_info_datum.pool_asset.asset_name,
@@ -1269,14 +1269,15 @@ validator pool(params: PoolParams) {
                     when
                       pool_info_datum.pool_asset.policy_id == assets.ada_policy_id
                     is {
-                      True ->
-                        assets.flatten(in.output.value) == [
-                          (
-                            assets.ada_policy_id,
-                            assets.ada_asset_name,
-                            min_lovelace + payment,
-                          ),
-                        ]
+                      True -> {
+                        expect
+                          assets.quantity_of(
+                            in.output.value,
+                            pool_info_datum.pool_asset.policy_id,
+                            pool_info_datum.pool_asset.asset_name,
+                          ) >= payment
+                        list.length(assets.flatten(in.output.value)) == 1
+                      }
                       False -> {
                         expect
                           assets.quantity_of(
@@ -1309,7 +1310,7 @@ validator pool(params: PoolParams) {
         when pool_info_datum.pool_asset.policy_id == assets.ada_policy_id is {
           True -> {
             expect list.length(assets.flatten(own_output.value)) == 2
-            assets.lovelace_of(own_output.value) == assets.lovelace_of(
+            assets.lovelace_of(own_output.value) >= assets.lovelace_of(
               own_input.output.value,
             ) + total_payment
           }
@@ -1323,7 +1324,7 @@ validator pool(params: PoolParams) {
               own_output.value,
               pool_info_datum.pool_asset.policy_id,
               pool_info_datum.pool_asset.asset_name,
-            ) == assets.quantity_of(
+            ) >= assets.quantity_of(
               own_input.output.value,
               pool_info_datum.pool_asset.policy_id,
               pool_info_datum.pool_asset.asset_name,
