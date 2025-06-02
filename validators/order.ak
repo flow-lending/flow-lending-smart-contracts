@@ -28,7 +28,6 @@
 //           - The transaction is signed by the order owner (o_owner_pkh).
 //       * Allows only the order owner to cancel their order.
 
-
 use aiken/collection/list
 use cardano/assets
 use cardano/transaction.{InlineDatum, OutputReference, Transaction}

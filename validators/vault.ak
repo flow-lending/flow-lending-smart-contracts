@@ -120,8 +120,8 @@
 // **Example:**
 // - Admin slashes a vault due to protocol violation.
 // - Redeemer: `VSlash`
-//
 
+//
 use aiken/collection/dict
 use aiken/collection/list
 use aiken/collection/pairs
