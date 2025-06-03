@@ -86,6 +86,7 @@ pub const t_pool_info_datum =
     },
     vault_authtoken: t_valut_authtoken,
     batcher_policy_id: license_symbol,
+    order_script_hash: #"8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c",
     vault_script_hash: #"702c2f4c2e49e6648c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86",
     pool_stake_key: Some(
       #"788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c8f2b6b7d779",
@@ -114,6 +115,7 @@ pub const t_pool_info_datum_non_ada =
     },
     vault_authtoken: t_valut_authtoken,
     batcher_policy_id: license_symbol,
+    order_script_hash: #"6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c8f2b",
     vault_script_hash: #"702c2f4c2e49e6648c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86",
     pool_stake_key: Some(
       #"788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c8f2b6b7d779",
@@ -142,6 +144,7 @@ pub const t_pool_info_datum_ada_collateral =
     },
     vault_authtoken: t_valut_authtoken,
     batcher_policy_id: license_symbol,
+    order_script_hash: #"8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c",
     vault_script_hash: #"702c2f4c2e49e6648c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86",
     pool_stake_key: Some(
       #"788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c8f2b6b7d779",
@@ -245,7 +248,7 @@ pub fn test_get_pool_info_ada_collateral() -> (Input, PoolInfoDatum) {
       output_reference: t_pool_info_outref,
       output: t_pool_info_output_ada_collateral,
     }
-  (t_pool_info_input, t_pool_info_datum_non_ada)
+  (t_pool_info_input, t_pool_info_datum_ada_collateral)
 }
 
 pub fn get_license_input_output() -> (Input, Output) {

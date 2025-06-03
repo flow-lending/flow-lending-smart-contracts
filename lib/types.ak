@@ -26,6 +26,7 @@ pub type PoolInfoDatum {
   ctoken: Asset,
   vault_authtoken: Asset,
   batcher_policy_id: ByteArray,
+  order_script_hash: ByteArray,
   vault_script_hash: ByteArray,
   pool_stake_key: Option<PubKeyHash>,
   reserve_factor_percentage: Int,

@@ -275,8 +275,8 @@ use types.{
   OrderDatum, PoolDatum, PoolInfoDatum, PoolParams, VaultDatum,
 }
 use utils.{
-  cal_interest_rate, find_license_deadline, find_posix_time_range, multiplier,
-  oracle_decimals, year_in_seconds,
+  cal_interest_rate, count_input_orders, find_license_deadline,
+  find_posix_time_range, multiplier, oracle_decimals, year_in_seconds,
 }
 
 pub type PoolRedeemer {
@@ -387,6 +387,10 @@ validator pool(params: PoolParams) {
         let (_start_valid_time_range, end_valid_time_range) =
           find_posix_time_range(validity_range)
         expect license_deadline >= end_valid_time_range
+        expect
+          count_input_orders(inputs, pool_info_datum.order_script_hash) == list.length(
+            order_indices,
+          )
         let (total_deposit, total_payment, _prev_out) =
           list.foldl(
             order_indices,
@@ -550,6 +554,10 @@ validator pool(params: PoolParams) {
         let (_start_valid_time_range, end_valid_time_range) =
           find_posix_time_range(validity_range)
         expect license_deadline >= end_valid_time_range
+        expect
+          count_input_orders(inputs, pool_info_datum.order_script_hash) == list.length(
+            order_indices,
+          )
         let (total_withdraw, total_payment, _prev_out) =
           list.foldl(
             order_indices,
@@ -719,6 +727,10 @@ validator pool(params: PoolParams) {
         let (start_valid_time_range, end_valid_time_range) =
           find_posix_time_range(validity_range)
         expect license_deadline >= end_valid_time_range
+        expect
+          count_input_orders(inputs, pool_info_datum.order_script_hash) == list.length(
+            order_indices,
+          )
         let (total_borrow, total_payment, _prev_out, count) =
           list.foldl(
             order_indices,
@@ -964,6 +976,10 @@ validator pool(params: PoolParams) {
         let (_start_valid_time_range, end_valid_time_range) =
           find_posix_time_range(validity_range)
         expect license_deadline >= end_valid_time_range
+        expect
+          count_input_orders(inputs, pool_info_datum.order_script_hash) == list.length(
+            order_indices,
+          )
         let (total_repay, total_payment, _prev_out, count) =
           list.foldl(
             order_indices,
@@ -1205,6 +1221,10 @@ validator pool(params: PoolParams) {
         let (_start_valid_time_range, end_valid_time_range) =
           find_posix_time_range(validity_range)
         expect license_deadline >= end_valid_time_range
+        expect
+          count_input_orders(inputs, pool_info_datum.order_script_hash) == list.length(
+            order_indices,
+          )
         let (total_repay, total_payment) =
           list.foldl(
             order_indices,
@@ -1387,7 +1407,7 @@ test pool_spend_apply_deposit() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount + batcher_fee,
         )
@@ -1516,7 +1536,7 @@ test pool_spend_apply_deposit_non_ada() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount + batcher_fee,
         )
@@ -1645,7 +1665,7 @@ test pool_spend_apply_deposit_ada_collateral() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount + batcher_fee,
         )
@@ -1801,7 +1821,7 @@ test pool_spend_apply_withdraw() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount + batcher_fee,
         )
@@ -1957,7 +1977,7 @@ test pool_spend_apply_withdraw_non_ada() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount + batcher_fee,
         )
@@ -2113,7 +2133,7 @@ test pool_spend_apply_withdraw_ada_collateral() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount + batcher_fee,
         )
@@ -2292,7 +2312,7 @@ test pool_spend_apply_borrow() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount * 2 + batcher_fee,
         )
@@ -2510,7 +2530,7 @@ test pool_spend_apply_borrow_non_ada() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount * 2 + batcher_fee,
         )
@@ -2728,7 +2748,7 @@ test pool_spend_apply_borrow_ada_collateral() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount * 2 + batcher_fee,
         )
@@ -2946,7 +2966,7 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount * 2 + batcher_fee,
         )
@@ -3164,7 +3184,7 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null_non_ada() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount * 2 + batcher_fee,
         )
@@ -3439,7 +3459,7 @@ test pool_spend_apply_repay() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount + batcher_fee,
         )
@@ -3675,7 +3695,7 @@ test pool_spend_apply_repay_non_ada() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount + batcher_fee,
         )
@@ -3911,7 +3931,7 @@ test pool_spend_apply_repay_ada_collateral() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount + batcher_fee,
         )
@@ -4146,7 +4166,7 @@ test pool_spend_apply_liquidate() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount + batcher_fee,
         )
@@ -4362,7 +4382,7 @@ test pool_spend_apply_liquidate_non_ada() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount + batcher_fee,
         )
@@ -4578,7 +4598,7 @@ test pool_spend_apply_liquidate_ada_collateral() {
     Input {
       output_reference: order_ref,
       output: Output {
-        address: from_script(#"11"),
+        address: from_script(pool_info_datum.order_script_hash),
         value: assets.from_lovelace(
           pool_info_datum.envelope_amount + batcher_fee,
         )

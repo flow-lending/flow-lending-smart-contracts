@@ -1,10 +1,12 @@
 use aiken/builtin
 use aiken/collection/dict
+use aiken/collection/list
 use aiken/interval.{Finite}
 use aiken/primitive/bytearray
 use aiken/primitive/string
+use cardano/address.{Script}
 use cardano/assets.{PolicyId, Value}
-use cardano/transaction.{ValidityRange}
+use cardano/transaction.{Input, ValidityRange}
 use types.{PoolInfoDatum}
 
 pub const multiplier = 10_000
@@ -77,4 +79,25 @@ pub fn cal_interest_rate(u: Int, pool_info_datum: PoolInfoDatum) -> Int {
         u - pool_info_datum.kink
       ) * pool_info_datum.slope_high / multiplier
   }
+}
+
+pub fn count_input_orders(
+  inputs: List<Input>,
+  order_script_hash: ByteArray,
+) -> Int {
+  list.foldl(
+    inputs,
+    0,
+    fn(input, acc) {
+      when input.output.address.payment_credential is {
+        Script(script_hash) ->
+          if script_hash == order_script_hash {
+            acc + 1
+          } else {
+            acc
+          }
+        _ -> acc
+      }
+    },
+  )
 }
