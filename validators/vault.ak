@@ -184,6 +184,7 @@ validator vault(params: VaultParams) {
         let own_input_datum: VaultDatum = datum
         expect Some(own_input) = list.at(inputs, own_input_idx)
         expect Some(own_output) = list.at(outputs, own_output_idx)
+        expect own_input.output.address == own_output.address
         expect own_input.output_reference == own_outref
         expect InlineDatum(own_output_inline_datum) = own_output.datum
         expect own_output_datum: VaultDatum = own_output_inline_datum
