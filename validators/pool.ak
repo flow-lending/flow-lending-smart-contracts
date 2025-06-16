@@ -727,17 +727,16 @@ validator pool(params: PoolParams) {
         let (start_valid_time_range, end_valid_time_range) =
           find_posix_time_range(validity_range)
         expect license_deadline >= end_valid_time_range
+        let order_length = list.length(order_indices)
         expect
-          count_input_orders(inputs, pool_info_datum.order_script_hash) == list.length(
-            order_indices,
-          )
-        let (total_borrow, total_payment, _prev_out, count) =
+          count_input_orders(inputs, pool_info_datum.order_script_hash) == order_length
+        let (total_borrow, total_payment, _prev_out) =
           list.foldl(
             order_indices,
-            (0, 0, -1, 0),
+            (0, 0, -1),
             fn(curr, acc) {
               let (in_idx, out_idx, vault_idx, oracle_idx) = curr
-              let (acc_total, acc_payment, p_out, c_count) = acc
+              let (acc_total, acc_payment, p_out) = acc
               expect out_idx > p_out
               expect Some(in) = list.at(inputs, in_idx)
               expect InlineDatum(order_inline_datum) = in.output.datum
@@ -878,12 +877,7 @@ validator pool(params: PoolParams) {
                           ),
                         ]
                     }
-                  (
-                    acc_total + o_principal,
-                    acc_payment + payment,
-                    out_idx,
-                    c_count + 1,
-                  )
+                  (acc_total + o_principal, acc_payment + payment, out_idx)
                 }
                 _ -> fail
               }
@@ -894,7 +888,7 @@ validator pool(params: PoolParams) {
             (
               pool_info_datum.vault_authtoken.policy_id,
               pool_info_datum.vault_authtoken.asset_name,
-              count,
+              order_length,
             ),
           ]
         expect own_output_datum.total_ctoken == own_input_datum.total_ctoken
@@ -976,17 +970,18 @@ validator pool(params: PoolParams) {
         let (_start_valid_time_range, end_valid_time_range) =
           find_posix_time_range(validity_range)
         expect license_deadline >= end_valid_time_range
+        let order_length = list.length(order_indices)
         expect
-          count_input_orders(inputs, pool_info_datum.order_script_hash) == list.length(
-            order_indices,
-          )
-        let (total_repay, total_payment, _prev_out, count) =
+          count_input_orders(inputs, pool_info_datum.order_script_hash) == order_length
+        expect
+          count_input_orders(inputs, pool_info_datum.vault_script_hash) == order_length
+        let (total_repay, total_payment, _prev_out) =
           list.foldl(
             order_indices,
-            (0, 0, -1, 0),
+            (0, 0, -1),
             fn(curr, acc) {
               let (in_idx, out_idx, vault_idx, oracle_idx) = curr
-              let (acc_total, acc_payment, p_out, c_count) = acc
+              let (acc_total, acc_payment, p_out) = acc
               expect out_idx > p_out
               expect Some(in) = list.at(inputs, in_idx)
               expect InlineDatum(order_inline_datum) = in.output.datum
@@ -1119,7 +1114,6 @@ validator pool(params: PoolParams) {
                     acc_total + vault_datum.principal,
                     acc_payment + payment,
                     out_idx,
-                    c_count + 1,
                   )
                 }
                 _ -> fail
@@ -1131,7 +1125,7 @@ validator pool(params: PoolParams) {
             (
               pool_info_datum.vault_authtoken.policy_id,
               pool_info_datum.vault_authtoken.asset_name,
-              -count,
+              -order_length,
             ),
           ]
         expect own_output_datum.total_ctoken == own_input_datum.total_ctoken
@@ -1221,10 +1215,11 @@ validator pool(params: PoolParams) {
         let (_start_valid_time_range, end_valid_time_range) =
           find_posix_time_range(validity_range)
         expect license_deadline >= end_valid_time_range
+        let order_length = list.length(order_indices)
         expect
-          count_input_orders(inputs, pool_info_datum.order_script_hash) == list.length(
-            order_indices,
-          )
+          count_input_orders(inputs, pool_info_datum.order_script_hash) == order_length
+        expect
+          count_input_orders(inputs, pool_info_datum.vault_script_hash) == order_length
         let (total_repay, total_payment) =
           list.foldl(
             order_indices,
