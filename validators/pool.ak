@@ -276,7 +276,7 @@ use types.{
 }
 use utils.{
   cal_interest_rate, count_input_orders, find_license_deadline,
-  find_posix_time_range, multiplier, oracle_decimals, year_in_seconds,
+  find_posix_time_range, multiplier, oracle_decimals, year_in_milliseconds,
 }
 
 pub type PoolRedeemer {
@@ -1033,7 +1033,7 @@ validator pool(params: PoolParams) {
                     vault_datum.principal * pool_info_datum.pool_asset_decimals * (
                       multiplier + vault_datum.interest_rate * (
                         end_valid_time_range - vault_datum.start_time
-                      ) / year_in_seconds
+                      ) / year_in_milliseconds
                     ) / multiplier
                   let ltv =
                     payment * multiplier / (
@@ -1103,7 +1103,7 @@ validator pool(params: PoolParams) {
                     ) >= vault_datum.principal * pool_info_datum.pool_asset_decimals * (
                       multiplier + vault_datum.interest_rate * (
                         o_time - vault_datum.start_time
-                      ) / year_in_seconds
+                      ) / year_in_milliseconds
                     ) / multiplier
                   expect
                     when
@@ -1268,7 +1268,7 @@ validator pool(params: PoolParams) {
                     vault_datum.principal * pool_info_datum.pool_asset_decimals * (
                       multiplier + vault_datum.interest_rate * (
                         end_valid_time_range - vault_datum.start_time
-                      ) / year_in_seconds
+                      ) / year_in_milliseconds
                     ) / multiplier
                   let ltv =
                     payment * multiplier / (
@@ -3431,7 +3431,7 @@ test pool_spend_apply_repay() {
     vault_datum.principal * pool_info_datum.pool_asset_decimals * (
       multiplier + vault_datum.interest_rate * (
         end_valid_time_range - vault_datum.start_time
-      ) / year_in_seconds
+      ) / year_in_milliseconds
     ) / multiplier
   let profit =
     payment - vault_datum.principal * pool_info_datum.pool_asset_decimals
@@ -3667,7 +3667,7 @@ test pool_spend_apply_repay_non_ada() {
     vault_datum.principal * pool_info_datum.pool_asset_decimals * (
       multiplier + vault_datum.interest_rate * (
         end_valid_time_range - vault_datum.start_time
-      ) / year_in_seconds
+      ) / year_in_milliseconds
     ) / multiplier
   let profit =
     payment - vault_datum.principal * pool_info_datum.pool_asset_decimals
@@ -3903,7 +3903,7 @@ test pool_spend_apply_repay_ada_collateral() {
     vault_datum.principal * pool_info_datum.pool_asset_decimals * (
       multiplier + vault_datum.interest_rate * (
         end_valid_time_range - vault_datum.start_time
-      ) / year_in_seconds
+      ) / year_in_milliseconds
     ) / multiplier
   let profit =
     payment - vault_datum.principal * pool_info_datum.pool_asset_decimals
@@ -4139,7 +4139,7 @@ test pool_spend_apply_liquidate() {
     vault_datum.principal * pool_info_datum.pool_asset_decimals * (
       multiplier + vault_datum.interest_rate * (
         end_valid_time_range - vault_datum.start_time
-      ) / year_in_seconds
+      ) / year_in_milliseconds
     ) / multiplier
   let profit =
     payment - vault_datum.principal * pool_info_datum.pool_asset_decimals
@@ -4355,7 +4355,7 @@ test pool_spend_apply_liquidate_non_ada() {
     vault_datum.principal * pool_info_datum.pool_asset_decimals * (
       multiplier + vault_datum.interest_rate * (
         end_valid_time_range - vault_datum.start_time
-      ) / year_in_seconds
+      ) / year_in_milliseconds
     ) / multiplier
   let profit =
     payment - vault_datum.principal * pool_info_datum.pool_asset_decimals
@@ -4571,7 +4571,7 @@ test pool_spend_apply_liquidate_ada_collateral() {
     vault_datum.principal * pool_info_datum.pool_asset_decimals * (
       multiplier + vault_datum.interest_rate * (
         end_valid_time_range - vault_datum.start_time
-      ) / year_in_seconds
+      ) / year_in_milliseconds
     ) / multiplier
   let profit =
     payment - vault_datum.principal * pool_info_datum.pool_asset_decimals

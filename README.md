@@ -43,6 +43,7 @@ Each `VaultDatum` enables per-loan interest accrual, collateral enforcement, and
 ### 2. Pool
 
 - **Datum**: `PoolDatum`
+
   - `pool_id`: `OutputReference` – Pool instance ID.
   - `total_supplied`: `Int` – Total supplied liquidity.
   - `total_borrowed`: `Int` – Outstanding borrows.
@@ -114,7 +115,7 @@ Each `VaultDatum` enables per-loan interest accrual, collateral enforcement, and
   - Above kink: Steep interest increase (`slope_high`).
 - **Mechanics**:
   - Uses `interest_index` for compounding.
-  - Normalized by `year_in_seconds` constant.
+  - Normalized by `year_in_milliseconds` constant.
 
 Let:
 

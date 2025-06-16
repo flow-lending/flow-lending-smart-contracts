@@ -13,7 +13,7 @@ pub const multiplier = 10_000
 
 pub const oracle_decimals = 1_000_000
 
-pub const year_in_seconds = 31_536_000_000
+pub const year_in_milliseconds = 31_536_000_000
 
 const minus_ascii_code = 45
 
