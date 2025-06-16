@@ -275,8 +275,9 @@ use types.{
   OrderDatum, PoolDatum, PoolInfoDatum, PoolParams, VaultDatum,
 }
 use utils.{
-  cal_interest_rate, count_input_orders, find_license_deadline,
-  find_posix_time_range, multiplier, oracle_decimals, year_in_milliseconds,
+  cal_interest_rate, check_correct_input_payment_credential, count_input_orders,
+  find_license_deadline, find_posix_time_range, multiplier, oracle_decimals,
+  year_in_milliseconds,
 }
 
 pub type PoolRedeemer {
@@ -391,15 +392,21 @@ validator pool(params: PoolParams) {
           count_input_orders(inputs, pool_info_datum.order_script_hash) == list.length(
             order_indices,
           )
-        let (total_deposit, total_payment, _prev_out) =
+        let (total_deposit, total_payment, _prev_in, _prev_out) =
           list.foldl(
             order_indices,
-            (0, 0, -1),
+            (0, 0, -1, -1),
             fn(curr, acc) {
               let (in_idx, out_idx) = curr
-              let (acc_total, acc_payment, p_out) = acc
+              let (acc_total, acc_payment, p_in, p_out) = acc
+              expect in_idx > p_in
               expect out_idx > p_out
               expect Some(in) = list.at(inputs, in_idx)
+              expect
+                check_correct_input_payment_credential(
+                  in,
+                  pool_info_datum.order_script_hash,
+                )
               expect Some(out) = list.at(outputs, out_idx)
               expect InlineDatum(order_inline_datum) = in.output.datum
               expect order_datum: OrderDatum = order_inline_datum
@@ -456,7 +463,7 @@ validator pool(params: PoolParams) {
                     o_amount,
                   ),
                 ]
-              (acc_total + o_amount, acc_payment + payment, out_idx)
+              (acc_total + o_amount, acc_payment + payment, in_idx, out_idx)
             },
           )
         expect
@@ -551,15 +558,21 @@ validator pool(params: PoolParams) {
           count_input_orders(inputs, pool_info_datum.order_script_hash) == list.length(
             order_indices,
           )
-        let (total_withdraw, total_payment, _prev_out) =
+        let (total_withdraw, total_payment, _prev_in, _prev_out) =
           list.foldl(
             order_indices,
-            (0, 0, -1),
+            (0, 0, -1, -1),
             fn(curr, acc) {
               let (in_idx, out_idx) = curr
-              let (acc_total, acc_payment, p_out) = acc
+              let (acc_total, acc_payment, p_in, p_out) = acc
+              expect in_idx > p_in
               expect out_idx > p_out
               expect Some(in) = list.at(inputs, in_idx)
+              expect
+                check_correct_input_payment_credential(
+                  in,
+                  pool_info_datum.order_script_hash,
+                )
               expect Some(out) = list.at(outputs, out_idx)
               expect InlineDatum(order_inline_datum) = in.output.datum
               expect order_datum: OrderDatum = order_inline_datum
@@ -624,7 +637,7 @@ validator pool(params: PoolParams) {
                     True
                   }
                 }
-              (acc_total + o_amount, acc_payment + payment, out_idx)
+              (acc_total + o_amount, acc_payment + payment, in_idx, out_idx)
             },
           )
         expect
@@ -718,15 +731,21 @@ validator pool(params: PoolParams) {
         let order_length = list.length(order_indices)
         expect
           count_input_orders(inputs, pool_info_datum.order_script_hash) == order_length
-        let (total_borrow, total_payment, _prev_out) =
+        let (total_borrow, total_payment, _prev_in, _prev_out) =
           list.foldl(
             order_indices,
-            (0, 0, -1),
+            (0, 0, -1, -1),
             fn(curr, acc) {
               let (in_idx, out_idx, vault_idx, oracle_idx) = curr
-              let (acc_total, acc_payment, p_out) = acc
+              let (acc_total, acc_payment, p_in, p_out) = acc
+              expect in_idx > p_in
               expect out_idx > p_out
               expect Some(in) = list.at(inputs, in_idx)
+              expect
+                check_correct_input_payment_credential(
+                  in,
+                  pool_info_datum.order_script_hash,
+                )
               expect InlineDatum(order_inline_datum) = in.output.datum
               expect order_datum: OrderDatum = order_inline_datum
               expect Some(out) = list.at(outputs, out_idx)
@@ -864,7 +883,7 @@ validator pool(params: PoolParams) {
                       ),
                     ]
                 }
-              (acc_total + o_principal, acc_payment + payment, out_idx)
+              (acc_total + o_principal, acc_payment + payment, in_idx, out_idx)
             },
           )
         expect
@@ -959,15 +978,21 @@ validator pool(params: PoolParams) {
           count_input_orders(inputs, pool_info_datum.order_script_hash) == order_length
         expect
           count_input_orders(inputs, pool_info_datum.vault_script_hash) == order_length
-        let (total_repay, total_payment, _prev_out) =
+        let (total_repay, total_payment, _prev_in, _prev_out) =
           list.foldl(
             order_indices,
-            (0, 0, -1),
+            (0, 0, -1, -1),
             fn(curr, acc) {
               let (in_idx, out_idx, vault_idx, oracle_idx) = curr
-              let (acc_total, acc_payment, p_out) = acc
+              let (acc_total, acc_payment, p_in, p_out) = acc
+              expect in_idx > p_in
               expect out_idx > p_out
               expect Some(in) = list.at(inputs, in_idx)
+              expect
+                check_correct_input_payment_credential(
+                  in,
+                  pool_info_datum.order_script_hash,
+                )
               expect InlineDatum(order_inline_datum) = in.output.datum
               expect order_datum: OrderDatum = order_inline_datum
               expect Some(out) = list.at(outputs, out_idx)
@@ -1093,6 +1118,7 @@ validator pool(params: PoolParams) {
               (
                 acc_total + vault_datum.principal,
                 acc_payment + payment,
+                in_idx,
                 out_idx,
               )
             },
@@ -1197,14 +1223,20 @@ validator pool(params: PoolParams) {
           count_input_orders(inputs, pool_info_datum.order_script_hash) == order_length
         expect
           count_input_orders(inputs, pool_info_datum.vault_script_hash) == order_length
-        let (total_repay, total_payment) =
+        let (total_repay, total_payment, _prev_in) =
           list.foldl(
             order_indices,
-            (0, 0),
+            (0, 0, -1),
             fn(curr, acc) {
               let (in_idx, vault_idx, oracle_idx) = curr
-              let (acc_total, acc_payment) = acc
+              let (acc_total, acc_payment, p_in) = acc
+              expect in_idx > p_in
               expect Some(in) = list.at(inputs, in_idx)
+              expect
+                check_correct_input_payment_credential(
+                  in,
+                  pool_info_datum.order_script_hash,
+                )
               expect InlineDatum(order_inline_datum) = in.output.datum
               expect order_datum: OrderDatum = order_inline_datum
               expect Some(in_vault) = list.at(inputs, vault_idx)
@@ -1284,7 +1316,7 @@ validator pool(params: PoolParams) {
                     list.length(assets.flatten(in.output.value)) == 2
                   }
                 }
-              (acc_total + vault_datum.principal, acc_payment + payment)
+              (acc_total + vault_datum.principal, acc_payment + payment, in_idx)
             },
           )
         expect

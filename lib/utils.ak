@@ -6,7 +6,7 @@ use aiken/primitive/bytearray
 use aiken/primitive/string
 use cardano/address.{Script}
 use cardano/assets.{PolicyId, Value}
-use cardano/transaction.{Input, ValidityRange}
+use cardano/transaction.{Input, Output, ValidityRange}
 use types.{PoolInfoDatum}
 
 pub const multiplier = 10_000
@@ -18,6 +18,16 @@ pub const year_in_milliseconds = 31_536_000_000
 const minus_ascii_code = 45
 
 const zero_ascii_code = 48
+
+pub fn check_correct_input_payment_credential(
+  input: Input,
+  expected_script_hash: ByteArray,
+) -> Bool {
+  when input.output.address.payment_credential is {
+    Script(script_hash) -> script_hash == expected_script_hash
+    _ -> False
+  }
+}
 
 pub fn find_posix_time_range(time_rage: ValidityRange) -> (Int, Int) {
   expect Finite(t1) = time_rage.lower_bound.bound_type
