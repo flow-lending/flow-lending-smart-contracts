@@ -319,7 +319,7 @@ pub type PoolRedeemer {
     // (in_idx, vault_idx, oracle_idx)
     order_indices: List<(Int, Int, Int)>,
   }
-  Close
+  AdminOperation
 }
 
 validator pool(params: PoolParams) {
@@ -1365,7 +1365,7 @@ validator pool(params: PoolParams) {
           }
         }
       }
-      Close -> list.has(extra_signatories, params.admin_pkh)
+      AdminOperation -> list.has(extra_signatories, params.admin_pkh)
     }
   }
 
@@ -4737,7 +4737,7 @@ test pool_spend_apply_close() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  let pool_redeemer = Close
+  let pool_redeemer = AdminOperation
   let params =
     PoolParams {
       admin_pkh: t_admin_pkh,

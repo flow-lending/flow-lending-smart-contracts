@@ -25,7 +25,7 @@ use aiken/collection/list
 use aiken/collection/pairs
 use cardano/assets.{PolicyId}
 use cardano/transaction.{InlineDatum, OutputReference, Spend, Transaction}
-use pool.{ApplyDeposit, ApplyWithdraw, Close, PoolRedeemer}
+use pool.{AdminOperation, ApplyDeposit, ApplyWithdraw, PoolRedeemer}
 use types.{Asset, PoolDatum}
 
 pub type CTokenRedeemer {
@@ -56,7 +56,7 @@ validator ctoken(params: CTokenParams) {
     when pool_redeemer is {
       ApplyDeposit { .. } -> True
       ApplyWithdraw { .. } -> True
-      Close -> True
+      AdminOperation -> True
       _ -> False
     }
   }

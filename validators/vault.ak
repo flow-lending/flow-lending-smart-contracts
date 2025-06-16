@@ -131,7 +131,7 @@ use cardano/assets
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Spend, Transaction,
 }
-use pool.{ApplyLiquidate, ApplyRepay, Close, PoolRedeemer}
+use pool.{AdminOperation, ApplyLiquidate, ApplyRepay, PoolRedeemer}
 use test_constants.{
   t_collateral_asset, t_collateral_asset_ada, t_pool_id, t_pool_nft,
   t_valut_authtoken,
@@ -176,7 +176,7 @@ validator vault(params: VaultParams) {
         when pool_redeemer is {
           ApplyRepay { .. } -> True
           ApplyLiquidate { .. } -> True
-          Close -> True
+          AdminOperation -> True
           _ -> False
         }
       }

@@ -27,7 +27,7 @@ use aiken/collection/list
 use aiken/collection/pairs
 use cardano/assets.{PolicyId}
 use cardano/transaction.{InlineDatum, OutputReference, Spend, Transaction}
-use pool.{ApplyBorrow, ApplyLiquidate, ApplyRepay, Close, PoolRedeemer}
+use pool.{AdminOperation, ApplyBorrow, ApplyLiquidate, ApplyRepay, PoolRedeemer}
 use types.{Asset, PoolDatum}
 
 pub type VaultAuthTokenRedeemer {
@@ -63,7 +63,7 @@ validator vault_authtoken(params: VaultAuthTokenParams) {
       ApplyBorrow { .. } -> True
       ApplyRepay { .. } -> True
       ApplyLiquidate { .. } -> True
-      Close -> True
+      AdminOperation -> True
       _ -> False
     }
   }
