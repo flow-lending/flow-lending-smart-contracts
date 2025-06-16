@@ -24,7 +24,7 @@
 use aiken/collection/dict
 use aiken/collection/list
 use aiken/interval
-use cardano/address.{from_verification_key}
+use cardano/address.{Address, Script, from_verification_key}
 use cardano/assets.{PolicyId, flatten}
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, Transaction,
@@ -32,12 +32,17 @@ use cardano/transaction.{
 use constants.{pool_info_nft_tn, pool_nft_tn}
 use test_constants.{
   t_admin_pkh, t_init_pool_output, t_pool_authtoken_policy_id, t_pool_id,
-  t_pool_info_output,
+  t_pool_info_output, t_pool_info_script_hash, t_pool_script_hash,
 }
 use types.{PoolDatum, PoolInfoDatum}
 
 pub type MintRedeemer {
-  Mint { pool_info_out_idx: Int, pool_out_idx: Int }
+  Mint {
+    pool_info_out_idx: Int,
+    pool_out_idx: Int,
+    pool_info_script: ByteArray,
+    pool_script_hash: ByteArray,
+  }
   Burn
 }
 
@@ -78,13 +83,33 @@ validator pool_auth_token(params: PoolAuthTokenParams) {
   mint(redeemer: MintRedeemer, policy_id: PolicyId, self: Transaction) {
     let Transaction { inputs, outputs, mint, extra_signatories, .. } = self
     when redeemer is {
-      Mint { pool_info_out_idx, pool_out_idx } -> {
+      Mint {
+        pool_info_out_idx,
+        pool_out_idx,
+        pool_info_script,
+        pool_script_hash,
+      } -> {
         expect list.has(extra_signatories, params.admin_pkh)
         let pool_info_nft = assets.from_asset(policy_id, pool_info_nft_tn, 1)
         let pool_nft = assets.from_asset(policy_id, pool_nft_tn, 1)
         let merged_mint = assets.merge(pool_info_nft, pool_nft)
         expect Some(pool_info_output) = list.at(outputs, pool_info_out_idx)
         expect Some(pool_output) = list.at(outputs, pool_out_idx)
+        let pool_info_script_cred = Script(pool_info_script)
+        let pool_script_cred = Script(pool_script_hash)
+        let Output {
+          address: Address {
+            payment_credential: pool_info_payment_credential,
+            ..
+          },
+          ..
+        } = pool_info_output
+        let Output {
+          address: Address { payment_credential: pool_payment_credential, .. },
+          ..
+        } = pool_output
+        expect pool_info_payment_credential == pool_info_script_cred
+        expect pool_payment_credential == pool_script_cred
         expect
           assets.quantity_of(
             pool_info_output.value,
@@ -170,7 +195,13 @@ test pool_auth_token_mint() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  let redeemer = Mint { pool_info_out_idx: 0, pool_out_idx: 1 }
+  let redeemer =
+    Mint {
+      pool_info_out_idx: 0,
+      pool_out_idx: 1,
+      pool_info_script: t_pool_info_script_hash,
+      pool_script_hash: t_pool_script_hash,
+    }
   let params =
     PoolAuthTokenParams { pool_id: t_pool_id, admin_pkh: t_admin_pkh }
   pool_auth_token.mint(params, redeemer, own_policy_id, tx)
