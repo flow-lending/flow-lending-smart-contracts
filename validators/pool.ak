@@ -483,21 +483,21 @@ validator pool(params: PoolParams) {
         when pool_info_datum.pool_asset.policy_id == assets.ada_policy_id is {
           True -> {
             expect list.length(assets.flatten(own_output.value)) == 2
-            assets.lovelace_of(own_output.value) == assets.lovelace_of(
+            assets.lovelace_of(own_output.value) >= assets.lovelace_of(
               own_input.output.value,
             ) + total_payment
           }
           False -> {
             expect list.length(assets.flatten(own_output.value)) == 3
             expect
-              assets.lovelace_of(own_output.value) == assets.lovelace_of(
+              assets.lovelace_of(own_output.value) >= assets.lovelace_of(
                 own_input.output.value,
               )
             assets.quantity_of(
               own_output.value,
               pool_info_datum.pool_asset.policy_id,
               pool_info_datum.pool_asset.asset_name,
-            ) == assets.quantity_of(
+            ) >= assets.quantity_of(
               own_input.output.value,
               pool_info_datum.pool_asset.policy_id,
               pool_info_datum.pool_asset.asset_name,
@@ -656,21 +656,21 @@ validator pool(params: PoolParams) {
         when pool_info_datum.pool_asset.policy_id == assets.ada_policy_id is {
           True -> {
             expect list.length(assets.flatten(own_output.value)) == 2
-            assets.lovelace_of(own_output.value) == assets.lovelace_of(
+            assets.lovelace_of(own_output.value) >= assets.lovelace_of(
               own_input.output.value,
             ) - total_payment
           }
           False -> {
             expect list.length(assets.flatten(own_output.value)) == 3
             expect
-              assets.lovelace_of(own_output.value) == assets.lovelace_of(
+              assets.lovelace_of(own_output.value) >= assets.lovelace_of(
                 own_input.output.value,
               )
             assets.quantity_of(
               own_output.value,
               pool_info_datum.pool_asset.policy_id,
               pool_info_datum.pool_asset.asset_name,
-            ) == assets.quantity_of(
+            ) >= assets.quantity_of(
               own_input.output.value,
               pool_info_datum.pool_asset.policy_id,
               pool_info_datum.pool_asset.asset_name,
@@ -901,21 +901,21 @@ validator pool(params: PoolParams) {
         when pool_info_datum.pool_asset.policy_id == assets.ada_policy_id is {
           True -> {
             expect list.length(assets.flatten(own_output.value)) == 2
-            assets.lovelace_of(own_output.value) == assets.lovelace_of(
+            assets.lovelace_of(own_output.value) >= assets.lovelace_of(
               own_input.output.value,
             ) - total_payment
           }
           False -> {
             expect list.length(assets.flatten(own_output.value)) == 3
             expect
-              assets.lovelace_of(own_output.value) == assets.lovelace_of(
+              assets.lovelace_of(own_output.value) >= assets.lovelace_of(
                 own_input.output.value,
               )
             assets.quantity_of(
               own_output.value,
               pool_info_datum.pool_asset.policy_id,
               pool_info_datum.pool_asset.asset_name,
-            ) == assets.quantity_of(
+            ) >= assets.quantity_of(
               own_input.output.value,
               pool_info_datum.pool_asset.policy_id,
               pool_info_datum.pool_asset.asset_name,
@@ -1153,7 +1153,7 @@ validator pool(params: PoolParams) {
           False -> {
             expect list.length(assets.flatten(own_output.value)) == 3
             expect
-              assets.lovelace_of(own_output.value) == assets.lovelace_of(
+              assets.lovelace_of(own_output.value) >= assets.lovelace_of(
                 own_input.output.value,
               )
             assets.quantity_of(
@@ -1348,7 +1348,7 @@ validator pool(params: PoolParams) {
           False -> {
             expect list.length(assets.flatten(own_output.value)) == 3
             expect
-              assets.lovelace_of(own_output.value) == assets.lovelace_of(
+              assets.lovelace_of(own_output.value) >= assets.lovelace_of(
                 own_input.output.value,
               )
             assets.quantity_of(
