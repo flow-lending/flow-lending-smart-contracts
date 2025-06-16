@@ -134,6 +134,7 @@ use cardano/transaction.{
 use pool.{ApplyLiquidate, ApplyRepay, Close, PoolRedeemer}
 use test_constants.{
   t_collateral_asset, t_collateral_asset_ada, t_pool_id, t_pool_nft,
+  t_valut_authtoken,
 }
 use types.{Asset, PoolDatum, VaultDatum}
 
@@ -210,7 +211,7 @@ validator vault(params: VaultParams) {
             own_input_datum.collateral_asset.asset_name,
             add_amount * own_input_datum.collateral_decimals,
           )
-        expect assets.match(own_output.value, expected_output_value, ==)
+        expect assets.match(own_output.value, expected_output_value, >=)
         list.has(extra_signatories, own_input_datum.owner_pkh)
       }
 
@@ -221,6 +222,48 @@ validator vault(params: VaultParams) {
   else(_) {
     fail
   }
+}
+
+test assets_match() {
+  let in_value =
+    assets.from_lovelace(30)
+      |> assets.add(
+          t_valut_authtoken.policy_id,
+          t_valut_authtoken.asset_name,
+          1,
+        )
+      |> assets.add(
+          t_collateral_asset.policy_id,
+          t_collateral_asset.asset_name,
+          42,
+        )
+
+  let out_value =
+    assets.from_lovelace(40)
+      |> assets.add(
+          t_valut_authtoken.policy_id,
+          t_valut_authtoken.asset_name,
+          1,
+        )
+      |> assets.add(
+          t_collateral_asset.policy_id,
+          t_collateral_asset.asset_name,
+          42,
+        )
+      |> assets.add(
+          t_collateral_asset.policy_id,
+          t_collateral_asset.asset_name,
+          10,
+        )
+  let expected_output_value =
+    in_value
+      |> assets.add(
+          t_collateral_asset.policy_id,
+          t_collateral_asset.asset_name,
+          10,
+        )
+
+  True == assets.match(out_value, expected_output_value, >=)
 }
 
 test vault_spend_add_collateral() {
