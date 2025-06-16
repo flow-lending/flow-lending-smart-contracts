@@ -1309,6 +1309,14 @@ validator pool(params: PoolParams) {
               }
             },
           )
+        expect
+          assets.flatten(mint) == [
+            (
+              pool_info_datum.vault_authtoken.policy_id,
+              pool_info_datum.vault_authtoken.asset_name,
+              -order_length,
+            ),
+          ]
         expect own_output_datum.total_ctoken == own_input_datum.total_ctoken
         let profit =
           total_payment - total_repay * pool_info_datum.pool_asset_decimals
