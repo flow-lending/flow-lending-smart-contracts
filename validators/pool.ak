@@ -759,6 +759,7 @@ validator pool(params: PoolParams) {
                   o_batcher_fee,
                   o_collateral_amount,
                   o_collateral_asset,
+                  o_start_time,
                 } -> {
                   expect o_pool_id == own_input_datum.pool_id
                   expect o_principal > 0 && o_batcher_fee >= 0
@@ -804,6 +805,7 @@ validator pool(params: PoolParams) {
                   expect
                     vault_datum.collateral_decimals == collateral_info.collateral_decimals
                   expect vault_datum.start_time <= start_valid_time_range
+                  expect vault_datum.start_time >= o_start_time
                   expect vault_datum.principal == o_principal
                   expect vault_address == out_vault.address
                   let u =
@@ -2293,6 +2295,7 @@ test pool_spend_apply_borrow() {
       o_principal: principal_amount,
       o_collateral_amount: collateral_amount,
       o_collateral_asset: t_collateral_asset,
+      o_start_time: 1727453227635,
     }
   let pool_output =
     Output {
@@ -2511,6 +2514,7 @@ test pool_spend_apply_borrow_non_ada() {
       o_principal: principal_amount,
       o_collateral_amount: collateral_amount,
       o_collateral_asset: t_collateral_asset,
+      o_start_time: 1727453227635,
     }
   let pool_output =
     Output {
@@ -2729,6 +2733,7 @@ test pool_spend_apply_borrow_ada_collateral() {
       o_principal: principal_amount,
       o_collateral_amount: collateral_amount,
       o_collateral_asset: t_collateral_asset_ada,
+      o_start_time: 1727453227635,
     }
   let pool_output =
     Output {
@@ -2947,6 +2952,7 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null() {
       o_principal: principal_amount,
       o_collateral_amount: collateral_amount,
       o_collateral_asset: t_collateral_asset,
+      o_start_time: 1727453227635,
     }
   let pool_output =
     Output {
@@ -3165,6 +3171,7 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null_non_ada() {
       o_principal: principal_amount,
       o_collateral_amount: collateral_amount,
       o_collateral_asset: t_collateral_asset,
+      o_start_time: 1727453227635,
     }
   let pool_output =
     Output {

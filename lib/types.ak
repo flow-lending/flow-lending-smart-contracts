@@ -74,6 +74,7 @@ pub type OrderDatum {
     o_principal: Int,
     o_collateral_amount: Int,
     o_collateral_asset: Asset,
+    o_start_time: Int,
   }
   ORepay {
     o_pool_id: OutputReference,
