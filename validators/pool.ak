@@ -1234,6 +1234,12 @@ validator pool(params: PoolParams) {
               expect order_datum: OrderDatum = order_inline_datum
               expect Some(in_vault) = list.at(inputs, vault_idx)
               let out_vault = in_vault.output
+              expect
+                assets.quantity_of(
+                  out_vault.value,
+                  pool_info_datum.vault_authtoken.policy_id,
+                  pool_info_datum.vault_authtoken.asset_name,
+                ) == 1
               expect InlineDatum(vault_inline_datum) = out_vault.datum
               expect vault_datum: VaultDatum = vault_inline_datum
               expect Some(oracle_ref_input) =
