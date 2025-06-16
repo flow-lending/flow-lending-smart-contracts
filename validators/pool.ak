@@ -403,67 +403,60 @@ validator pool(params: PoolParams) {
               expect Some(out) = list.at(outputs, out_idx)
               expect InlineDatum(order_inline_datum) = in.output.datum
               expect order_datum: OrderDatum = order_inline_datum
-              when order_datum is {
-                ODeposit {
-                  o_pool_id,
-                  o_owner_pkh,
-                  o_owner_stake_key,
-                  o_amount,
-                  o_batcher_fee,
-                } -> {
-                  expect o_pool_id == own_input_datum.pool_id
-                  let user_address =
-                    when o_owner_stake_key is {
-                      Some(key) ->
-                        address.from_verification_key(o_owner_pkh)
-                          |> address.with_delegation_key(key)
-                      None -> address.from_verification_key(o_owner_pkh)
-                    }
-                  expect user_address == out.address
-                  expect o_amount > 0 && o_batcher_fee >= 0
-                  let min_lovelace =
-                    o_batcher_fee + pool_info_datum.envelope_amount
-                  let payment =
-                    when own_input_datum.total_ctoken == 0 is {
-                      True -> o_amount * pool_info_datum.pool_asset_decimals
-                      False ->
-                        o_amount * own_input_datum.total_supplied / own_input_datum.total_ctoken
-                    }
-                  let in_lovelace = assets.lovelace_of(in.output.value)
-                  expect
-                    when
-                      pool_info_datum.pool_asset.policy_id == assets.ada_policy_id
-                    is {
-                      True ->
-                        in_lovelace >= min_lovelace + payment && list.length(
-                          assets.flatten(in.output.value),
-                        ) == 1
-                      False ->
-                        in_lovelace >= min_lovelace && assets.quantity_of(
-                          in.output.value,
-                          pool_info_datum.pool_asset.policy_id,
-                          pool_info_datum.pool_asset.asset_name,
-                        ) >= payment && list.length(
-                          assets.flatten(in.output.value),
-                        ) == 2
-                    }
-                  expect
-                    assets.flatten(out.value) == [
-                      (
-                        assets.ada_policy_id,
-                        assets.ada_asset_name,
-                        pool_info_datum.envelope_amount,
-                      ),
-                      (
-                        pool_info_datum.ctoken.policy_id,
-                        pool_info_datum.ctoken.asset_name,
-                        o_amount,
-                      ),
-                    ]
-                  (acc_total + o_amount, acc_payment + payment, out_idx)
+              expect ODeposit {
+                o_pool_id,
+                o_owner_pkh,
+                o_owner_stake_key,
+                o_amount,
+                o_batcher_fee,
+              } = order_datum
+              expect o_pool_id == own_input_datum.pool_id
+              let user_address =
+                when o_owner_stake_key is {
+                  Some(key) ->
+                    address.from_verification_key(o_owner_pkh)
+                      |> address.with_delegation_key(key)
+                  None -> address.from_verification_key(o_owner_pkh)
                 }
-                _ -> fail
-              }
+              expect user_address == out.address
+              expect o_amount > 0 && o_batcher_fee >= 0
+              let min_lovelace = o_batcher_fee + pool_info_datum.envelope_amount
+              let payment =
+                when own_input_datum.total_ctoken == 0 is {
+                  True -> o_amount * pool_info_datum.pool_asset_decimals
+                  False ->
+                    o_amount * own_input_datum.total_supplied / own_input_datum.total_ctoken
+                }
+              let in_lovelace = assets.lovelace_of(in.output.value)
+              expect
+                when
+                  pool_info_datum.pool_asset.policy_id == assets.ada_policy_id
+                is {
+                  True ->
+                    in_lovelace >= min_lovelace + payment && list.length(
+                      assets.flatten(in.output.value),
+                    ) == 1
+                  False ->
+                    in_lovelace >= min_lovelace && assets.quantity_of(
+                      in.output.value,
+                      pool_info_datum.pool_asset.policy_id,
+                      pool_info_datum.pool_asset.asset_name,
+                    ) >= payment && list.length(assets.flatten(in.output.value)) == 2
+                }
+              expect
+                assets.flatten(out.value) == [
+                  (
+                    assets.ada_policy_id,
+                    assets.ada_asset_name,
+                    pool_info_datum.envelope_amount,
+                  ),
+                  (
+                    pool_info_datum.ctoken.policy_id,
+                    pool_info_datum.ctoken.asset_name,
+                    o_amount,
+                  ),
+                ]
+              (acc_total + o_amount, acc_payment + payment, out_idx)
             },
           )
         expect
@@ -570,73 +563,68 @@ validator pool(params: PoolParams) {
               expect Some(out) = list.at(outputs, out_idx)
               expect InlineDatum(order_inline_datum) = in.output.datum
               expect order_datum: OrderDatum = order_inline_datum
-              when order_datum is {
-                OWithdraw {
-                  o_pool_id,
-                  o_owner_pkh,
-                  o_owner_stake_key,
-                  o_amount,
-                  o_batcher_fee,
-                } -> {
-                  expect o_pool_id == own_input_datum.pool_id
-                  let user_address =
-                    when o_owner_stake_key is {
-                      Some(key) ->
-                        address.from_verification_key(o_owner_pkh)
-                          |> address.with_delegation_key(key)
-                      None -> address.from_verification_key(o_owner_pkh)
-                    }
-                  expect user_address == out.address
-                  expect o_amount > 0 && o_batcher_fee >= 0
-                  let min_lovelace =
-                    o_batcher_fee + pool_info_datum.envelope_amount
-                  let payment =
-                    o_amount * own_input_datum.total_supplied / own_input_datum.total_ctoken
-                  let in_lovelace = assets.lovelace_of(in.output.value)
-                  expect in_lovelace >= min_lovelace
-                  expect list.length(assets.flatten(in.output.value)) == 2
-                  expect
-                    assets.quantity_of(
-                      in.output.value,
-                      pool_info_datum.ctoken.policy_id,
-                      pool_info_datum.ctoken.asset_name,
-                    ) == o_amount
-                  expect
-                    when
-                      pool_info_datum.pool_asset.policy_id == assets.ada_policy_id
-                    is {
-                      True -> {
-                        expect
-                          assets.flatten(out.value) == [
-                            (
-                              assets.ada_policy_id,
-                              assets.ada_asset_name,
-                              pool_info_datum.envelope_amount + payment,
-                            ),
-                          ]
-                        True
-                      }
-                      False -> {
-                        expect
-                          assets.flatten(out.value) == [
-                            (
-                              assets.ada_policy_id,
-                              assets.ada_asset_name,
-                              pool_info_datum.envelope_amount,
-                            ),
-                            (
-                              pool_info_datum.pool_asset.policy_id,
-                              pool_info_datum.pool_asset.asset_name,
-                              payment,
-                            ),
-                          ]
-                        True
-                      }
-                    }
-                  (acc_total + o_amount, acc_payment + payment, out_idx)
+              expect OWithdraw {
+                o_pool_id,
+                o_owner_pkh,
+                o_owner_stake_key,
+                o_amount,
+                o_batcher_fee,
+              } = order_datum
+              expect o_pool_id == own_input_datum.pool_id
+              let user_address =
+                when o_owner_stake_key is {
+                  Some(key) ->
+                    address.from_verification_key(o_owner_pkh)
+                      |> address.with_delegation_key(key)
+                  None -> address.from_verification_key(o_owner_pkh)
                 }
-                _ -> fail
-              }
+              expect user_address == out.address
+              expect o_amount > 0 && o_batcher_fee >= 0
+              let min_lovelace = o_batcher_fee + pool_info_datum.envelope_amount
+              let payment =
+                o_amount * own_input_datum.total_supplied / own_input_datum.total_ctoken
+              let in_lovelace = assets.lovelace_of(in.output.value)
+              expect in_lovelace >= min_lovelace
+              expect list.length(assets.flatten(in.output.value)) == 2
+              expect
+                assets.quantity_of(
+                  in.output.value,
+                  pool_info_datum.ctoken.policy_id,
+                  pool_info_datum.ctoken.asset_name,
+                ) == o_amount
+              expect
+                when
+                  pool_info_datum.pool_asset.policy_id == assets.ada_policy_id
+                is {
+                  True -> {
+                    expect
+                      assets.flatten(out.value) == [
+                        (
+                          assets.ada_policy_id,
+                          assets.ada_asset_name,
+                          pool_info_datum.envelope_amount + payment,
+                        ),
+                      ]
+                    True
+                  }
+                  False -> {
+                    expect
+                      assets.flatten(out.value) == [
+                        (
+                          assets.ada_policy_id,
+                          assets.ada_asset_name,
+                          pool_info_datum.envelope_amount,
+                        ),
+                        (
+                          pool_info_datum.pool_asset.policy_id,
+                          pool_info_datum.pool_asset.asset_name,
+                          payment,
+                        ),
+                      ]
+                    True
+                  }
+                }
+              (acc_total + o_amount, acc_payment + payment, out_idx)
             },
           )
         expect
@@ -750,139 +738,133 @@ validator pool(params: PoolParams) {
               expect InlineDatum(oracle_inline_datum) =
                 oracle_ref_input.output.datum
               expect oracle_datum: OracleDatum = oracle_inline_datum
-              when order_datum is {
-                OBorrow {
-                  o_pool_id,
-                  o_owner_pkh,
-                  o_owner_stake_key,
-                  o_principal,
-                  o_batcher_fee,
-                  o_collateral_amount,
-                  o_collateral_asset,
-                  o_start_time,
-                } -> {
-                  expect o_pool_id == own_input_datum.pool_id
-                  expect o_principal > 0 && o_batcher_fee >= 0
-                  expect Some(collateral_info) =
-                    list.find(
-                      pool_info_datum.collateral_infos,
-                      fn(c_info) {
-                        o_collateral_asset == c_info.collateral_asset && assets.quantity_of(
-                          oracle_ref_input.output.value,
-                          c_info.oracle_nft.policy_id,
-                          c_info.oracle_nft.asset_name,
-                        ) == 1
-                      },
-                    )
-                  let ltv =
-                    o_principal * pool_info_datum.pool_asset_decimals * multiplier / (
-                      o_collateral_amount * collateral_info.collateral_decimals * oracle_datum.price / oracle_decimals
-                    )
-                  expect ltv <= collateral_info.liquidation_threshold
-                  expect ltv <= collateral_info.max_borrow_ltv
-                  let user_address =
-                    when o_owner_stake_key is {
-                      Some(key) ->
-                        address.from_verification_key(o_owner_pkh)
-                          |> address.with_delegation_key(key)
-                      None -> address.from_verification_key(o_owner_pkh)
-                    }
-                  expect out.address == user_address
-                  let vault_address =
-                    when pool_info_datum.pool_stake_key is {
-                      Some(key) ->
-                        address.from_script(pool_info_datum.vault_script_hash)
-                          |> address.with_delegation_script(key)
-                      None ->
-                        address.from_script(pool_info_datum.vault_script_hash)
-                    }
-                  expect vault_datum.pool_id == own_input_datum.pool_id
-                  expect vault_datum.borrow_id == in.output_reference
-                  expect vault_datum.owner_pkh == o_owner_pkh
-                  expect vault_datum.owner_stake_key == o_owner_stake_key
-                  expect vault_datum.collateral_asset == o_collateral_asset
-                  expect vault_datum.collateral_amount == o_collateral_amount
-                  expect
-                    vault_datum.collateral_decimals == collateral_info.collateral_decimals
-                  expect vault_datum.start_time <= start_valid_time_range
-                  expect vault_datum.start_time >= o_start_time
-                  expect vault_datum.principal == o_principal
-                  expect vault_address == out_vault.address
-                  let u =
-                    own_input_datum.total_borrowed * multiplier / own_input_datum.total_supplied
-                  let interest_rate = cal_interest_rate(u, pool_info_datum)
-                  expect vault_datum.interest_rate == interest_rate
-                  let min_lovelace =
-                    o_batcher_fee + pool_info_datum.envelope_amount * 2
-                  let payment =
-                    o_principal * pool_info_datum.pool_asset_decimals
-                  let in_lovelace = assets.lovelace_of(in.output.value)
-                  expect
-                    assets.quantity_of(
-                      out_vault.value,
-                      pool_info_datum.vault_authtoken.policy_id,
-                      pool_info_datum.vault_authtoken.asset_name,
+              expect OBorrow {
+                o_pool_id,
+                o_owner_pkh,
+                o_owner_stake_key,
+                o_principal,
+                o_batcher_fee,
+                o_collateral_amount,
+                o_collateral_asset,
+                o_start_time,
+              } = order_datum
+              expect o_pool_id == own_input_datum.pool_id
+              expect o_principal > 0 && o_batcher_fee >= 0
+              expect Some(collateral_info) =
+                list.find(
+                  pool_info_datum.collateral_infos,
+                  fn(c_info) {
+                    o_collateral_asset == c_info.collateral_asset && assets.quantity_of(
+                      oracle_ref_input.output.value,
+                      c_info.oracle_nft.policy_id,
+                      c_info.oracle_nft.asset_name,
                     ) == 1
-                  expect in_lovelace >= min_lovelace
-                  expect
-                    when
-                      collateral_info.collateral_asset.policy_id == assets.ada_policy_id
-                    is {
-                      True -> {
-                        expect
-                          assets.lovelace_of(in.output.value) >= min_lovelace + o_collateral_amount * collateral_info.collateral_decimals
-                        expect
-                          assets.lovelace_of(out_vault.value) >= pool_info_datum.envelope_amount + o_collateral_amount * collateral_info.collateral_decimals
-                        list.length(assets.flatten(out_vault.value)) == 2
-                      }
-                      False -> {
-                        expect
-                          assets.quantity_of(
-                            in.output.value,
-                            o_collateral_asset.policy_id,
-                            o_collateral_asset.asset_name,
-                          ) >= o_collateral_amount * collateral_info.collateral_decimals
-                        expect
-                          assets.lovelace_of(out_vault.value) >= pool_info_datum.envelope_amount
-                        expect
-                          assets.quantity_of(
-                            out_vault.value,
-                            o_collateral_asset.policy_id,
-                            o_collateral_asset.asset_name,
-                          ) >= o_collateral_amount * collateral_info.collateral_decimals
-                        list.length(assets.flatten(out_vault.value)) == 3
-                      }
-                    }
-                  expect
-                    when
-                      pool_info_datum.pool_asset.policy_id == assets.ada_policy_id
-                    is {
-                      True ->
-                        assets.flatten(out.value) == [
-                          (
-                            assets.ada_policy_id,
-                            assets.ada_asset_name,
-                            pool_info_datum.envelope_amount + payment,
-                          ),
-                        ]
-                      False ->
-                        assets.flatten(out.value) == [
-                          (
-                            assets.ada_policy_id,
-                            assets.ada_asset_name,
-                            pool_info_datum.envelope_amount,
-                          ),
-                          (
-                            pool_info_datum.pool_asset.policy_id,
-                            pool_info_datum.pool_asset.asset_name,
-                            payment,
-                          ),
-                        ]
-                    }
-                  (acc_total + o_principal, acc_payment + payment, out_idx)
+                  },
+                )
+              let ltv =
+                o_principal * pool_info_datum.pool_asset_decimals * multiplier / (
+                  o_collateral_amount * collateral_info.collateral_decimals * oracle_datum.price / oracle_decimals
+                )
+              expect ltv <= collateral_info.liquidation_threshold
+              expect ltv <= collateral_info.max_borrow_ltv
+              let user_address =
+                when o_owner_stake_key is {
+                  Some(key) ->
+                    address.from_verification_key(o_owner_pkh)
+                      |> address.with_delegation_key(key)
+                  None -> address.from_verification_key(o_owner_pkh)
                 }
-                _ -> fail
-              }
+              expect out.address == user_address
+              let vault_address =
+                when pool_info_datum.pool_stake_key is {
+                  Some(key) ->
+                    address.from_script(pool_info_datum.vault_script_hash)
+                      |> address.with_delegation_script(key)
+                  None -> address.from_script(pool_info_datum.vault_script_hash)
+                }
+              expect vault_datum.pool_id == own_input_datum.pool_id
+              expect vault_datum.borrow_id == in.output_reference
+              expect vault_datum.owner_pkh == o_owner_pkh
+              expect vault_datum.owner_stake_key == o_owner_stake_key
+              expect vault_datum.collateral_asset == o_collateral_asset
+              expect vault_datum.collateral_amount == o_collateral_amount
+              expect
+                vault_datum.collateral_decimals == collateral_info.collateral_decimals
+              expect vault_datum.start_time <= start_valid_time_range
+              expect vault_datum.start_time >= o_start_time
+              expect vault_datum.principal == o_principal
+              expect vault_address == out_vault.address
+              let u =
+                own_input_datum.total_borrowed * multiplier / own_input_datum.total_supplied
+              let interest_rate = cal_interest_rate(u, pool_info_datum)
+              expect vault_datum.interest_rate == interest_rate
+              let min_lovelace =
+                o_batcher_fee + pool_info_datum.envelope_amount * 2
+              let payment = o_principal * pool_info_datum.pool_asset_decimals
+              let in_lovelace = assets.lovelace_of(in.output.value)
+              expect
+                assets.quantity_of(
+                  out_vault.value,
+                  pool_info_datum.vault_authtoken.policy_id,
+                  pool_info_datum.vault_authtoken.asset_name,
+                ) == 1
+              expect in_lovelace >= min_lovelace
+              expect
+                when
+                  collateral_info.collateral_asset.policy_id == assets.ada_policy_id
+                is {
+                  True -> {
+                    expect
+                      assets.lovelace_of(in.output.value) >= min_lovelace + o_collateral_amount * collateral_info.collateral_decimals
+                    expect
+                      assets.lovelace_of(out_vault.value) >= pool_info_datum.envelope_amount + o_collateral_amount * collateral_info.collateral_decimals
+                    list.length(assets.flatten(out_vault.value)) == 2
+                  }
+                  False -> {
+                    expect
+                      assets.quantity_of(
+                        in.output.value,
+                        o_collateral_asset.policy_id,
+                        o_collateral_asset.asset_name,
+                      ) >= o_collateral_amount * collateral_info.collateral_decimals
+                    expect
+                      assets.lovelace_of(out_vault.value) >= pool_info_datum.envelope_amount
+                    expect
+                      assets.quantity_of(
+                        out_vault.value,
+                        o_collateral_asset.policy_id,
+                        o_collateral_asset.asset_name,
+                      ) >= o_collateral_amount * collateral_info.collateral_decimals
+                    list.length(assets.flatten(out_vault.value)) == 3
+                  }
+                }
+              expect
+                when
+                  pool_info_datum.pool_asset.policy_id == assets.ada_policy_id
+                is {
+                  True ->
+                    assets.flatten(out.value) == [
+                      (
+                        assets.ada_policy_id,
+                        assets.ada_asset_name,
+                        pool_info_datum.envelope_amount + payment,
+                      ),
+                    ]
+                  False ->
+                    assets.flatten(out.value) == [
+                      (
+                        assets.ada_policy_id,
+                        assets.ada_asset_name,
+                        pool_info_datum.envelope_amount,
+                      ),
+                      (
+                        pool_info_datum.pool_asset.policy_id,
+                        pool_info_datum.pool_asset.asset_name,
+                        payment,
+                      ),
+                    ]
+                }
+              (acc_total + o_principal, acc_payment + payment, out_idx)
             },
           )
         expect
@@ -1004,122 +986,115 @@ validator pool(params: PoolParams) {
               expect InlineDatum(oracle_inline_datum) =
                 oracle_ref_input.output.datum
               expect oracle_datum: OracleDatum = oracle_inline_datum
-              when order_datum is {
-                ORepay {
-                  o_pool_id,
-                  o_batcher_fee,
-                  o_borrow_id,
-                  o_owner_pkh,
-                  o_time,
-                } -> {
-                  expect o_pool_id == own_input_datum.pool_id
-                  expect o_batcher_fee >= 0
-                  expect o_time > vault_datum.start_time
-                  expect vault_datum.borrow_id == o_borrow_id
-                  expect vault_datum.owner_pkh == o_owner_pkh
-                  expect vault_datum.pool_id == own_input_datum.pool_id
-                  expect Some(collateral_info) =
-                    list.find(
-                      pool_info_datum.collateral_infos,
-                      fn(c_info) {
-                        vault_datum.collateral_asset == c_info.collateral_asset && assets.quantity_of(
-                          oracle_ref_input.output.value,
-                          c_info.oracle_nft.policy_id,
-                          c_info.oracle_nft.asset_name,
-                        ) == 1
-                      },
-                    )
-                  let payment =
-                    vault_datum.principal * pool_info_datum.pool_asset_decimals * (
-                      multiplier + vault_datum.interest_rate * (
-                        end_valid_time_range - vault_datum.start_time
-                      ) / year_in_milliseconds
-                    ) / multiplier
-                  let ltv =
-                    payment * multiplier / (
-                      vault_datum.collateral_amount * collateral_info.collateral_decimals * oracle_datum.price / oracle_decimals
-                    )
-                  expect ltv < collateral_info.liquidation_threshold
-                  let user_address =
-                    when vault_datum.owner_stake_key is {
-                      Some(key) ->
-                        address.from_verification_key(vault_datum.owner_pkh)
-                          |> address.with_delegation_key(key)
-                      None ->
-                        address.from_verification_key(vault_datum.owner_pkh)
-                    }
-                  expect out.address == user_address
-                  let vault_address =
-                    when pool_info_datum.pool_stake_key is {
-                      Some(key) ->
-                        address.from_script(pool_info_datum.vault_script_hash)
-                          |> address.with_delegation_script(key)
-                      None ->
-                        address.from_script(pool_info_datum.vault_script_hash)
-                    }
-                  expect vault_address == out_vault.address
-                  let min_lovelace =
-                    o_batcher_fee + pool_info_datum.envelope_amount
-                  let in_lovelace = assets.lovelace_of(in.output.value)
-                  expect in_lovelace >= min_lovelace
-                  expect
-                    when
-                      collateral_info.collateral_asset.policy_id == assets.ada_policy_id
-                    is {
-                      True -> {
-                        expect
-                          assets.lovelace_of(out.value) >= pool_info_datum.envelope_amount + vault_datum.collateral_amount * collateral_info.collateral_decimals
-                        expect list.length(assets.flatten(out.value)) == 1
-                        expect
-                          assets.lovelace_of(out_vault.value) >= pool_info_datum.envelope_amount + vault_datum.collateral_amount * collateral_info.collateral_decimals
-                        list.length(assets.flatten(out_vault.value)) == 2
-                      }
-                      False -> {
-                        expect
-                          assets.lovelace_of(out.value) >= pool_info_datum.envelope_amount
-                        expect
-                          assets.quantity_of(
-                            out.value,
-                            vault_datum.collateral_asset.policy_id,
-                            vault_datum.collateral_asset.asset_name,
-                          ) >= vault_datum.collateral_amount * collateral_info.collateral_decimals
-                        expect list.length(assets.flatten(out.value)) == 2
-                        expect
-                          assets.lovelace_of(out_vault.value) >= pool_info_datum.envelope_amount
-                        expect
-                          assets.quantity_of(
-                            out_vault.value,
-                            vault_datum.collateral_asset.policy_id,
-                            vault_datum.collateral_asset.asset_name,
-                          ) >= vault_datum.collateral_amount * collateral_info.collateral_decimals
-                        list.length(assets.flatten(out_vault.value)) == 3
-                      }
-                    }
-                  expect
-                    assets.quantity_of(
-                      in.output.value,
-                      pool_info_datum.pool_asset.policy_id,
-                      pool_info_datum.pool_asset.asset_name,
-                    ) >= vault_datum.principal * pool_info_datum.pool_asset_decimals * (
-                      multiplier + vault_datum.interest_rate * (
-                        o_time - vault_datum.start_time
-                      ) / year_in_milliseconds
-                    ) / multiplier
-                  expect
-                    when
-                      pool_info_datum.pool_asset.policy_id == assets.ada_policy_id
-                    is {
-                      True -> list.length(assets.flatten(in.output.value)) == 1
-                      False -> list.length(assets.flatten(in.output.value)) == 2
-                    }
-                  (
-                    acc_total + vault_datum.principal,
-                    acc_payment + payment,
-                    out_idx,
-                  )
+              expect ORepay {
+                o_pool_id,
+                o_batcher_fee,
+                o_borrow_id,
+                o_owner_pkh,
+                o_time,
+              } = order_datum
+              expect o_pool_id == own_input_datum.pool_id
+              expect o_batcher_fee >= 0
+              expect o_time > vault_datum.start_time
+              expect vault_datum.borrow_id == o_borrow_id
+              expect vault_datum.owner_pkh == o_owner_pkh
+              expect vault_datum.pool_id == own_input_datum.pool_id
+              expect Some(collateral_info) =
+                list.find(
+                  pool_info_datum.collateral_infos,
+                  fn(c_info) {
+                    vault_datum.collateral_asset == c_info.collateral_asset && assets.quantity_of(
+                      oracle_ref_input.output.value,
+                      c_info.oracle_nft.policy_id,
+                      c_info.oracle_nft.asset_name,
+                    ) == 1
+                  },
+                )
+              let payment =
+                vault_datum.principal * pool_info_datum.pool_asset_decimals * (
+                  multiplier + vault_datum.interest_rate * (
+                    end_valid_time_range - vault_datum.start_time
+                  ) / year_in_milliseconds
+                ) / multiplier
+              let ltv =
+                payment * multiplier / (
+                  vault_datum.collateral_amount * collateral_info.collateral_decimals * oracle_datum.price / oracle_decimals
+                )
+              expect ltv < collateral_info.liquidation_threshold
+              let user_address =
+                when vault_datum.owner_stake_key is {
+                  Some(key) ->
+                    address.from_verification_key(vault_datum.owner_pkh)
+                      |> address.with_delegation_key(key)
+                  None -> address.from_verification_key(vault_datum.owner_pkh)
                 }
-                _ -> fail
-              }
+              expect out.address == user_address
+              let vault_address =
+                when pool_info_datum.pool_stake_key is {
+                  Some(key) ->
+                    address.from_script(pool_info_datum.vault_script_hash)
+                      |> address.with_delegation_script(key)
+                  None -> address.from_script(pool_info_datum.vault_script_hash)
+                }
+              expect vault_address == out_vault.address
+              let min_lovelace = o_batcher_fee + pool_info_datum.envelope_amount
+              let in_lovelace = assets.lovelace_of(in.output.value)
+              expect in_lovelace >= min_lovelace
+              expect
+                when
+                  collateral_info.collateral_asset.policy_id == assets.ada_policy_id
+                is {
+                  True -> {
+                    expect
+                      assets.lovelace_of(out.value) >= pool_info_datum.envelope_amount + vault_datum.collateral_amount * collateral_info.collateral_decimals
+                    expect list.length(assets.flatten(out.value)) == 1
+                    expect
+                      assets.lovelace_of(out_vault.value) >= pool_info_datum.envelope_amount + vault_datum.collateral_amount * collateral_info.collateral_decimals
+                    list.length(assets.flatten(out_vault.value)) == 2
+                  }
+                  False -> {
+                    expect
+                      assets.lovelace_of(out.value) >= pool_info_datum.envelope_amount
+                    expect
+                      assets.quantity_of(
+                        out.value,
+                        vault_datum.collateral_asset.policy_id,
+                        vault_datum.collateral_asset.asset_name,
+                      ) >= vault_datum.collateral_amount * collateral_info.collateral_decimals
+                    expect list.length(assets.flatten(out.value)) == 2
+                    expect
+                      assets.lovelace_of(out_vault.value) >= pool_info_datum.envelope_amount
+                    expect
+                      assets.quantity_of(
+                        out_vault.value,
+                        vault_datum.collateral_asset.policy_id,
+                        vault_datum.collateral_asset.asset_name,
+                      ) >= vault_datum.collateral_amount * collateral_info.collateral_decimals
+                    list.length(assets.flatten(out_vault.value)) == 3
+                  }
+                }
+              expect
+                assets.quantity_of(
+                  in.output.value,
+                  pool_info_datum.pool_asset.policy_id,
+                  pool_info_datum.pool_asset.asset_name,
+                ) >= vault_datum.principal * pool_info_datum.pool_asset_decimals * (
+                  multiplier + vault_datum.interest_rate * (
+                    o_time - vault_datum.start_time
+                  ) / year_in_milliseconds
+                ) / multiplier
+              expect
+                when
+                  pool_info_datum.pool_asset.policy_id == assets.ada_policy_id
+                is {
+                  True -> list.length(assets.flatten(in.output.value)) == 1
+                  False -> list.length(assets.flatten(in.output.value)) == 2
+                }
+              (
+                acc_total + vault_datum.principal,
+                acc_payment + payment,
+                out_idx,
+              )
             },
           )
         expect
@@ -1247,74 +1222,69 @@ validator pool(params: PoolParams) {
               expect InlineDatum(oracle_inline_datum) =
                 oracle_ref_input.output.datum
               expect oracle_datum: OracleDatum = oracle_inline_datum
-              when order_datum is {
-                OLiquidate { o_pool_id, o_batcher_fee, o_borrow_id, .. } -> {
-                  expect o_pool_id == own_input_datum.pool_id
-                  expect o_batcher_fee >= 0
-                  expect vault_datum.borrow_id == o_borrow_id
-                  expect vault_datum.pool_id == own_input_datum.pool_id
-                  expect Some(collateral_info) =
-                    list.find(
-                      pool_info_datum.collateral_infos,
-                      fn(c_info) {
-                        vault_datum.collateral_asset == c_info.collateral_asset && assets.quantity_of(
-                          oracle_ref_input.output.value,
-                          c_info.oracle_nft.policy_id,
-                          c_info.oracle_nft.asset_name,
-                        ) == 1
-                      },
-                    )
-                  let payment =
-                    vault_datum.principal * pool_info_datum.pool_asset_decimals * (
-                      multiplier + vault_datum.interest_rate * (
-                        end_valid_time_range - vault_datum.start_time
-                      ) / year_in_milliseconds
-                    ) / multiplier
-                  let ltv =
-                    payment * multiplier / (
-                      vault_datum.collateral_amount * oracle_datum.price
-                    )
-                  expect ltv >= collateral_info.liquidation_threshold
-                  let vault_address =
-                    when pool_info_datum.pool_stake_key is {
-                      Some(key) ->
-                        address.from_script(pool_info_datum.vault_script_hash)
-                          |> address.with_delegation_script(key)
-                      None ->
-                        address.from_script(pool_info_datum.vault_script_hash)
-                    }
-                  expect vault_address == out_vault.address
-                  let min_lovelace =
-                    o_batcher_fee + pool_info_datum.envelope_amount
-                  let in_lovelace = assets.lovelace_of(in.output.value)
-                  expect in_lovelace >= min_lovelace
-                  expect
-                    when
-                      pool_info_datum.pool_asset.policy_id == assets.ada_policy_id
-                    is {
-                      True -> {
-                        expect
-                          assets.quantity_of(
-                            in.output.value,
-                            pool_info_datum.pool_asset.policy_id,
-                            pool_info_datum.pool_asset.asset_name,
-                          ) >= payment
-                        list.length(assets.flatten(in.output.value)) == 1
-                      }
-                      False -> {
-                        expect
-                          assets.quantity_of(
-                            in.output.value,
-                            pool_info_datum.pool_asset.policy_id,
-                            pool_info_datum.pool_asset.asset_name,
-                          ) >= payment
-                        list.length(assets.flatten(in.output.value)) == 2
-                      }
-                    }
-                  (acc_total + vault_datum.principal, acc_payment + payment)
+              expect OLiquidate { o_pool_id, o_batcher_fee, o_borrow_id, .. } =
+                order_datum
+              expect o_pool_id == own_input_datum.pool_id
+              expect o_batcher_fee >= 0
+              expect vault_datum.borrow_id == o_borrow_id
+              expect vault_datum.pool_id == own_input_datum.pool_id
+              expect Some(collateral_info) =
+                list.find(
+                  pool_info_datum.collateral_infos,
+                  fn(c_info) {
+                    vault_datum.collateral_asset == c_info.collateral_asset && assets.quantity_of(
+                      oracle_ref_input.output.value,
+                      c_info.oracle_nft.policy_id,
+                      c_info.oracle_nft.asset_name,
+                    ) == 1
+                  },
+                )
+              let payment =
+                vault_datum.principal * pool_info_datum.pool_asset_decimals * (
+                  multiplier + vault_datum.interest_rate * (
+                    end_valid_time_range - vault_datum.start_time
+                  ) / year_in_milliseconds
+                ) / multiplier
+              let ltv =
+                payment * multiplier / (
+                  vault_datum.collateral_amount * oracle_datum.price
+                )
+              expect ltv >= collateral_info.liquidation_threshold
+              let vault_address =
+                when pool_info_datum.pool_stake_key is {
+                  Some(key) ->
+                    address.from_script(pool_info_datum.vault_script_hash)
+                      |> address.with_delegation_script(key)
+                  None -> address.from_script(pool_info_datum.vault_script_hash)
                 }
-                _ -> fail
-              }
+              expect vault_address == out_vault.address
+              let min_lovelace = o_batcher_fee + pool_info_datum.envelope_amount
+              let in_lovelace = assets.lovelace_of(in.output.value)
+              expect in_lovelace >= min_lovelace
+              expect
+                when
+                  pool_info_datum.pool_asset.policy_id == assets.ada_policy_id
+                is {
+                  True -> {
+                    expect
+                      assets.quantity_of(
+                        in.output.value,
+                        pool_info_datum.pool_asset.policy_id,
+                        pool_info_datum.pool_asset.asset_name,
+                      ) >= payment
+                    list.length(assets.flatten(in.output.value)) == 1
+                  }
+                  False -> {
+                    expect
+                      assets.quantity_of(
+                        in.output.value,
+                        pool_info_datum.pool_asset.policy_id,
+                        pool_info_datum.pool_asset.asset_name,
+                      ) >= payment
+                    list.length(assets.flatten(in.output.value)) == 2
+                  }
+                }
+              (acc_total + vault_datum.principal, acc_payment + payment)
             },
           )
         expect
