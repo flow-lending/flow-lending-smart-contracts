@@ -76,7 +76,7 @@ pub type PoolAuthTokenParams {
 
 validator pool_auth_token(params: PoolAuthTokenParams) {
   mint(redeemer: MintRedeemer, policy_id: PolicyId, self: Transaction) {
-    let Transaction { outputs, mint, extra_signatories, .. } = self
+    let Transaction { inputs, outputs, mint, extra_signatories, .. } = self
     when redeemer is {
       Mint { pool_info_out_idx, pool_out_idx } -> {
         expect list.has(extra_signatories, params.admin_pkh)
@@ -101,10 +101,28 @@ validator pool_auth_token(params: PoolAuthTokenParams) {
         expect InlineDatum(pool_inline_datum) = pool_output.datum
         expect pool_datum: PoolDatum = pool_inline_datum
         expect is_pool_datum_valid(pool_datum)
+        expect pool_datum.pool_id == params.pool_id
+        expect pool_info_datum.pool_id == params.pool_id
+        expect
+          list.any(
+            inputs,
+            fn(input) { input.output_reference == params.pool_id },
+          )
         expect merged_mint == mint
         True
       }
-      Burn -> list.has(extra_signatories, params.admin_pkh)
+      Burn -> {
+        expect
+          list.foldl(
+            flatten(mint),
+            True,
+            fn(curr, acc) {
+              let (_, _, quantity) = curr
+              acc && quantity < 0
+            },
+          )
+        list.has(extra_signatories, params.admin_pkh)
+      }
     }
   }
 
