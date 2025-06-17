@@ -7,7 +7,7 @@ use aiken/primitive/string
 use cardano/address.{Script}
 use cardano/assets.{PolicyId, Value}
 use cardano/transaction.{Input, Output, ValidityRange}
-use types.{PoolInfoDatum}
+use types.{Asset, PoolInfoDatum}
 
 pub const multiplier = 10_000
 
@@ -102,6 +102,32 @@ pub fn count_input_orders(
       when input.output.address.payment_credential is {
         Script(script_hash) ->
           if script_hash == order_script_hash {
+            acc + 1
+          } else {
+            acc
+          }
+        _ -> acc
+      }
+    },
+  )
+}
+
+pub fn count_input_orders_with_auth_token(
+  inputs: List<Input>,
+  order_script_hash: ByteArray,
+  auth_token: Asset,
+) -> Int {
+  list.foldl(
+    inputs,
+    0,
+    fn(input, acc) {
+      when input.output.address.payment_credential is {
+        Script(script_hash) ->
+          if script_hash == order_script_hash && assets.quantity_of(
+            input.output.value,
+            auth_token.policy_id,
+            auth_token.asset_name,
+          ) == 1 {
             acc + 1
           } else {
             acc

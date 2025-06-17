@@ -276,8 +276,8 @@ use types.{
 }
 use utils.{
   cal_interest_rate, check_correct_input_payment_credential, count_input_orders,
-  find_license_deadline, find_posix_time_range, multiplier, oracle_decimals,
-  year_in_milliseconds,
+  count_input_orders_with_auth_token, find_license_deadline,
+  find_posix_time_range, multiplier, oracle_decimals, year_in_milliseconds,
 }
 
 pub type PoolRedeemer {
@@ -977,7 +977,11 @@ validator pool(params: PoolParams) {
         expect
           count_input_orders(inputs, pool_info_datum.order_script_hash) == order_length
         expect
-          count_input_orders(inputs, pool_info_datum.vault_script_hash) == order_length
+          count_input_orders_with_auth_token(
+            inputs,
+            pool_info_datum.vault_script_hash,
+            pool_info_datum.vault_authtoken,
+          ) == order_length
         let (total_repay, total_payment, _prev_in, _prev_out) =
           list.foldl(
             order_indices,
@@ -1222,7 +1226,11 @@ validator pool(params: PoolParams) {
         expect
           count_input_orders(inputs, pool_info_datum.order_script_hash) == order_length
         expect
-          count_input_orders(inputs, pool_info_datum.vault_script_hash) == order_length
+          count_input_orders_with_auth_token(
+            inputs,
+            pool_info_datum.vault_script_hash,
+            pool_info_datum.vault_authtoken,
+          ) == order_length
         let (total_repay, total_payment, _prev_in) =
           list.foldl(
             order_indices,
