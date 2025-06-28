@@ -430,9 +430,11 @@ validator pool(params: PoolParams) {
               let min_lovelace = o_batcher_fee + pool_info_datum.envelope_amount
               let payment =
                 when own_input_datum.total_ctoken == 0 is {
-                  True -> o_amount * pool_info_datum.pool_asset_decimals
+                  True -> o_amount
                   False ->
-                    o_amount * own_input_datum.total_supplied / own_input_datum.total_ctoken
+                    o_amount * own_input_datum.total_supplied / (
+                      own_input_datum.total_ctoken * pool_info_datum.pool_asset_decimals
+                    )
                 }
               let in_lovelace = assets.lovelace_of(in.output.value)
               expect
@@ -731,13 +733,13 @@ validator pool(params: PoolParams) {
         let order_length = list.length(order_indices)
         expect
           count_input_orders(inputs, pool_info_datum.order_script_hash) == order_length
-        let (total_borrow, total_payment, _prev_in, _prev_out) =
+        let (total_borrow, _prev_in, _prev_out) =
           list.foldl(
             order_indices,
-            (0, 0, -1, -1),
+            (0, -1, -1),
             fn(curr, acc) {
               let (in_idx, out_idx, vault_idx, oracle_idx) = curr
-              let (acc_total, acc_payment, p_in, p_out) = acc
+              let (acc_total, p_in, p_out) = acc
               expect in_idx > p_in
               expect out_idx > p_out
               expect Some(in) = list.at(inputs, in_idx)
@@ -782,9 +784,8 @@ validator pool(params: PoolParams) {
                 )
               let ltv =
                 cal_ltv(
-                  o_principal * pool_info_datum.pool_asset_decimals,
+                  o_principal,
                   o_collateral_amount,
-                  collateral_info.collateral_decimals,
                   oracle_datum.price,
                   oracle_decimals,
                 )
@@ -823,7 +824,6 @@ validator pool(params: PoolParams) {
               expect vault_datum.interest_rate == interest_rate
               let min_lovelace =
                 o_batcher_fee + pool_info_datum.envelope_amount * 2
-              let payment = o_principal * pool_info_datum.pool_asset_decimals
               let in_lovelace = assets.lovelace_of(in.output.value)
               expect
                 assets.quantity_of(
@@ -838,9 +838,9 @@ validator pool(params: PoolParams) {
                 is {
                   True -> {
                     expect
-                      assets.lovelace_of(in.output.value) >= min_lovelace + o_collateral_amount * collateral_info.collateral_decimals
+                      assets.lovelace_of(in.output.value) >= min_lovelace + o_collateral_amount
                     expect
-                      assets.lovelace_of(out_vault.value) >= pool_info_datum.envelope_amount + o_collateral_amount * collateral_info.collateral_decimals
+                      assets.lovelace_of(out_vault.value) >= pool_info_datum.envelope_amount + o_collateral_amount
                     list.length(assets.flatten(out_vault.value)) == 2
                   }
                   False -> {
@@ -849,7 +849,7 @@ validator pool(params: PoolParams) {
                         in.output.value,
                         o_collateral_asset.policy_id,
                         o_collateral_asset.asset_name,
-                      ) >= o_collateral_amount * collateral_info.collateral_decimals
+                      ) >= o_collateral_amount
                     expect
                       assets.lovelace_of(out_vault.value) >= pool_info_datum.envelope_amount
                     expect
@@ -857,7 +857,7 @@ validator pool(params: PoolParams) {
                         out_vault.value,
                         o_collateral_asset.policy_id,
                         o_collateral_asset.asset_name,
-                      ) >= o_collateral_amount * collateral_info.collateral_decimals
+                      ) >= o_collateral_amount
                     list.length(assets.flatten(out_vault.value)) == 3
                   }
                 }
@@ -870,7 +870,7 @@ validator pool(params: PoolParams) {
                       (
                         assets.ada_policy_id,
                         assets.ada_asset_name,
-                        pool_info_datum.envelope_amount + payment,
+                        pool_info_datum.envelope_amount + o_principal,
                       ),
                     ]
                   False ->
@@ -883,11 +883,11 @@ validator pool(params: PoolParams) {
                       (
                         pool_info_datum.pool_asset.policy_id,
                         pool_info_datum.pool_asset.asset_name,
-                        payment,
+                        o_principal,
                       ),
                     ]
                 }
-              (acc_total + o_principal, acc_payment + payment, in_idx, out_idx)
+              (acc_total + o_principal, in_idx, out_idx)
             },
           )
         expect
@@ -901,14 +901,14 @@ validator pool(params: PoolParams) {
         expect own_output_datum.total_ctoken == own_input_datum.total_ctoken
         expect own_output_datum.total_supplied == own_input_datum.total_supplied
         expect
-          own_output_datum.total_borrowed == own_input_datum.total_borrowed + total_borrow * pool_info_datum.pool_asset_decimals
+          own_output_datum.total_borrowed == own_input_datum.total_borrowed + total_borrow
         expect own_output_datum.reserve == own_input_datum.reserve
         when pool_info_datum.pool_asset.policy_id == assets.ada_policy_id is {
           True -> {
             expect list.length(assets.flatten(own_output.value)) == 2
             assets.lovelace_of(own_output.value) >= assets.lovelace_of(
               own_input.output.value,
-            ) - total_payment
+            ) - total_borrow
           }
           False -> {
             expect list.length(assets.flatten(own_output.value)) == 3
@@ -924,7 +924,7 @@ validator pool(params: PoolParams) {
               own_input.output.value,
               pool_info_datum.pool_asset.policy_id,
               pool_info_datum.pool_asset.asset_name,
-            ) - total_payment
+            ) - total_borrow
           }
         }
       }
@@ -1044,7 +1044,7 @@ validator pool(params: PoolParams) {
                   },
                 )
               let payment =
-                vault_datum.principal * pool_info_datum.pool_asset_decimals * (
+                vault_datum.principal * (
                   multiplier + vault_datum.interest_rate * (
                     end_valid_time_range - vault_datum.start_time
                   ) / year_in_milliseconds
@@ -1053,7 +1053,6 @@ validator pool(params: PoolParams) {
                 cal_ltv(
                   payment,
                   vault_datum.collateral_amount,
-                  collateral_info.collateral_decimals,
                   oracle_datum.price,
                   oracle_decimals,
                 )
@@ -1083,10 +1082,10 @@ validator pool(params: PoolParams) {
                 is {
                   True -> {
                     expect
-                      assets.lovelace_of(out.value) >= pool_info_datum.envelope_amount + vault_datum.collateral_amount * collateral_info.collateral_decimals
+                      assets.lovelace_of(out.value) >= pool_info_datum.envelope_amount + vault_datum.collateral_amount
                     expect list.length(assets.flatten(out.value)) == 1
                     expect
-                      assets.lovelace_of(out_vault.value) >= pool_info_datum.envelope_amount + vault_datum.collateral_amount * collateral_info.collateral_decimals
+                      assets.lovelace_of(out_vault.value) >= pool_info_datum.envelope_amount + vault_datum.collateral_amount
                     list.length(assets.flatten(out_vault.value)) == 2
                   }
                   False -> {
@@ -1097,7 +1096,7 @@ validator pool(params: PoolParams) {
                         out.value,
                         vault_datum.collateral_asset.policy_id,
                         vault_datum.collateral_asset.asset_name,
-                      ) >= vault_datum.collateral_amount * collateral_info.collateral_decimals
+                      ) >= vault_datum.collateral_amount
                     expect list.length(assets.flatten(out.value)) == 2
                     expect
                       assets.lovelace_of(out_vault.value) >= pool_info_datum.envelope_amount
@@ -1106,7 +1105,7 @@ validator pool(params: PoolParams) {
                         out_vault.value,
                         vault_datum.collateral_asset.policy_id,
                         vault_datum.collateral_asset.asset_name,
-                      ) >= vault_datum.collateral_amount * collateral_info.collateral_decimals
+                      ) >= vault_datum.collateral_amount
                     list.length(assets.flatten(out_vault.value)) == 3
                   }
                 }
@@ -1115,7 +1114,7 @@ validator pool(params: PoolParams) {
                   in.output.value,
                   pool_info_datum.pool_asset.policy_id,
                   pool_info_datum.pool_asset.asset_name,
-                ) >= vault_datum.principal * pool_info_datum.pool_asset_decimals * (
+                ) >= vault_datum.principal * (
                   multiplier + vault_datum.interest_rate * (
                     o_time - vault_datum.start_time
                   ) / year_in_milliseconds
@@ -1144,8 +1143,7 @@ validator pool(params: PoolParams) {
             ),
           ]
         expect own_output_datum.total_ctoken == own_input_datum.total_ctoken
-        let profit =
-          total_payment - total_repay * pool_info_datum.pool_asset_decimals
+        let profit = total_payment - total_repay
         let add_to_reserve =
           profit * pool_info_datum.reserve_factor_percentage / multiplier
         expect
@@ -1153,7 +1151,7 @@ validator pool(params: PoolParams) {
             profit - add_to_reserve
           )
         expect
-          own_output_datum.total_borrowed == own_input_datum.total_borrowed - total_repay * pool_info_datum.pool_asset_decimals
+          own_output_datum.total_borrowed == own_input_datum.total_borrowed - total_repay
         expect
           own_output_datum.reserve == own_input_datum.reserve + add_to_reserve
         when pool_info_datum.pool_asset.policy_id == assets.ada_policy_id is {
@@ -1288,7 +1286,7 @@ validator pool(params: PoolParams) {
                   },
                 )
               let payment =
-                vault_datum.principal * pool_info_datum.pool_asset_decimals * (
+                vault_datum.principal * (
                   multiplier + vault_datum.interest_rate * (
                     end_valid_time_range - vault_datum.start_time
                   ) / year_in_milliseconds
@@ -1297,7 +1295,6 @@ validator pool(params: PoolParams) {
                 cal_ltv(
                   payment,
                   vault_datum.collateral_amount,
-                  collateral_info.collateral_decimals,
                   oracle_datum.price,
                   oracle_decimals,
                 )
@@ -1348,8 +1345,7 @@ validator pool(params: PoolParams) {
             ),
           ]
         expect own_output_datum.total_ctoken == own_input_datum.total_ctoken
-        let profit =
-          total_payment - total_repay * pool_info_datum.pool_asset_decimals
+        let profit = total_payment - total_repay
         let add_to_reserve =
           profit * pool_info_datum.reserve_factor_percentage / multiplier
         expect
@@ -1357,7 +1353,7 @@ validator pool(params: PoolParams) {
             profit - add_to_reserve
           )
         expect
-          own_output_datum.total_borrowed == own_input_datum.total_borrowed - total_repay * pool_info_datum.pool_asset_decimals
+          own_output_datum.total_borrowed == own_input_datum.total_borrowed - total_repay
         expect
           own_output_datum.reserve == own_input_datum.reserve + add_to_reserve
         when pool_info_datum.pool_asset.policy_id == assets.ada_policy_id is {
@@ -1399,11 +1395,11 @@ test pool_spend_apply_deposit() {
   let (license_input, license_output) = get_license_input_output()
   let pool_input =
     Input { output_reference: t_pool_outref, output: t_init_pool_output }
-  let deposit_amount = 10
+  let deposit_amount = 10 * pool_info_datum.pool_asset_decimals
   let pool_out_datum =
     PoolDatum {
       pool_id: t_pool_id,
-      total_supplied: deposit_amount * pool_info_datum.pool_asset_decimals,
+      total_supplied: deposit_amount,
       total_borrowed: 0,
       reserve: 0,
       total_ctoken: deposit_amount,
@@ -1426,7 +1422,7 @@ test pool_spend_apply_deposit() {
         |> assets.add(
             pool_info_datum.pool_asset.policy_id,
             pool_info_datum.pool_asset.asset_name,
-            deposit_amount * pool_info_datum.pool_asset_decimals,
+            deposit_amount,
           ),
       datum: InlineDatum(pool_out_datum),
       reference_script: None,
@@ -1447,7 +1443,7 @@ test pool_spend_apply_deposit() {
           |> assets.add(
               pool_info_datum.pool_asset.policy_id,
               pool_info_datum.pool_asset.asset_name,
-              deposit_amount * pool_info_datum.pool_asset_decimals,
+              deposit_amount,
             ),
         datum: InlineDatum(order_datum),
         reference_script: None,
@@ -1528,11 +1524,11 @@ test pool_spend_apply_deposit_non_ada() {
   let (license_input, license_output) = get_license_input_output()
   let pool_input =
     Input { output_reference: t_pool_outref, output: t_init_pool_output }
-  let deposit_amount = 10
+  let deposit_amount = 10 * pool_info_datum.pool_asset_decimals
   let pool_out_datum =
     PoolDatum {
       pool_id: t_pool_id,
-      total_supplied: deposit_amount * pool_info_datum.pool_asset_decimals,
+      total_supplied: deposit_amount,
       total_borrowed: 0,
       reserve: 0,
       total_ctoken: deposit_amount,
@@ -1555,7 +1551,7 @@ test pool_spend_apply_deposit_non_ada() {
         |> assets.add(
             pool_info_datum.pool_asset.policy_id,
             pool_info_datum.pool_asset.asset_name,
-            deposit_amount * pool_info_datum.pool_asset_decimals,
+            deposit_amount,
           ),
       datum: InlineDatum(pool_out_datum),
       reference_script: None,
@@ -1576,7 +1572,7 @@ test pool_spend_apply_deposit_non_ada() {
           |> assets.add(
               pool_info_datum.pool_asset.policy_id,
               pool_info_datum.pool_asset.asset_name,
-              deposit_amount * pool_info_datum.pool_asset_decimals,
+              deposit_amount,
             ),
         datum: InlineDatum(order_datum),
         reference_script: None,
@@ -1657,11 +1653,11 @@ test pool_spend_apply_deposit_ada_collateral() {
   let (license_input, license_output) = get_license_input_output()
   let pool_input =
     Input { output_reference: t_pool_outref, output: t_init_pool_output }
-  let deposit_amount = 10
+  let deposit_amount = 10 * pool_info_datum.pool_asset_decimals
   let pool_out_datum =
     PoolDatum {
       pool_id: t_pool_id,
-      total_supplied: deposit_amount * pool_info_datum.pool_asset_decimals,
+      total_supplied: deposit_amount,
       total_borrowed: 0,
       reserve: 0,
       total_ctoken: deposit_amount,
@@ -1684,7 +1680,7 @@ test pool_spend_apply_deposit_ada_collateral() {
         |> assets.add(
             pool_info_datum.pool_asset.policy_id,
             pool_info_datum.pool_asset.asset_name,
-            deposit_amount * pool_info_datum.pool_asset_decimals,
+            deposit_amount,
           ),
       datum: InlineDatum(pool_out_datum),
       reference_script: None,
@@ -1705,7 +1701,7 @@ test pool_spend_apply_deposit_ada_collateral() {
           |> assets.add(
               pool_info_datum.pool_asset.policy_id,
               pool_info_datum.pool_asset.asset_name,
-              deposit_amount * pool_info_datum.pool_asset_decimals,
+              deposit_amount,
             ),
         datum: InlineDatum(order_datum),
         reference_script: None,
@@ -2300,17 +2296,17 @@ test pool_spend_apply_borrow() {
         reference_script: None,
       },
     }
-  let principal_amount = 10
+  let principal_amount = 10 * pool_info_datum.pool_asset_decimals
   let pool_out_datum =
     PoolDatum {
       pool_id: t_pool_id,
       total_supplied: 60_000_000,
-      total_borrowed: principal_amount * pool_info_datum.pool_asset_decimals,
+      total_borrowed: principal_amount,
       reserve: 1_000_000,
       total_ctoken: 50,
     }
   let batcher_fee = 300_000
-  let collateral_amount = 40
+  let collateral_amount = 40 * t_collateral_info.collateral_decimals
   let owner_pkh = #"6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c8f2b"
   let owner_stake_key =
     Some(#"c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3")
@@ -2332,7 +2328,7 @@ test pool_spend_apply_borrow() {
         |> assets.add(
             pool_info_datum.pool_asset.policy_id,
             pool_info_datum.pool_asset.asset_name,
-            -principal_amount * pool_info_datum.pool_asset_decimals,
+            -principal_amount,
           ),
       datum: InlineDatum(pool_out_datum),
       reference_script: None,
@@ -2353,7 +2349,7 @@ test pool_spend_apply_borrow() {
           |> assets.add(
               t_collateral_asset.policy_id,
               t_collateral_asset.asset_name,
-              collateral_amount * t_collateral_info.collateral_decimals,
+              collateral_amount,
             ),
         datum: InlineDatum(order_datum),
         reference_script: None,
@@ -2373,7 +2369,7 @@ test pool_spend_apply_borrow() {
         |> assets.add(
             pool_info_datum.pool_asset.policy_id,
             pool_info_datum.pool_asset.asset_name,
-            principal_amount * pool_info_datum.pool_asset_decimals,
+            principal_amount,
           ),
       datum: NoDatum,
       reference_script: None,
@@ -2407,7 +2403,7 @@ test pool_spend_apply_borrow() {
         |> assets.add(
             t_collateral_asset.policy_id,
             t_collateral_asset.asset_name,
-            collateral_amount * t_collateral_info.collateral_decimals,
+            collateral_amount,
           )
         |> assets.add(
             pool_info_datum.vault_authtoken.policy_id,
@@ -2519,17 +2515,17 @@ test pool_spend_apply_borrow_non_ada() {
         reference_script: None,
       },
     }
-  let principal_amount = 10
+  let principal_amount = 10 * pool_info_datum.pool_asset_decimals
   let pool_out_datum =
     PoolDatum {
       pool_id: t_pool_id,
       total_supplied: 60_000_000,
-      total_borrowed: principal_amount * pool_info_datum.pool_asset_decimals,
+      total_borrowed: principal_amount,
       reserve: 1_000_000,
       total_ctoken: 50,
     }
   let batcher_fee = 300_000
-  let collateral_amount = 40
+  let collateral_amount = 40 * t_collateral_info.collateral_decimals
   let owner_pkh = #"6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c8f2b"
   let owner_stake_key =
     Some(#"c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3")
@@ -2551,7 +2547,7 @@ test pool_spend_apply_borrow_non_ada() {
         |> assets.add(
             pool_info_datum.pool_asset.policy_id,
             pool_info_datum.pool_asset.asset_name,
-            -principal_amount * pool_info_datum.pool_asset_decimals,
+            -principal_amount,
           ),
       datum: InlineDatum(pool_out_datum),
       reference_script: None,
@@ -2572,7 +2568,7 @@ test pool_spend_apply_borrow_non_ada() {
           |> assets.add(
               t_collateral_asset.policy_id,
               t_collateral_asset.asset_name,
-              collateral_amount * t_collateral_info.collateral_decimals,
+              collateral_amount,
             ),
         datum: InlineDatum(order_datum),
         reference_script: None,
@@ -2592,7 +2588,7 @@ test pool_spend_apply_borrow_non_ada() {
         |> assets.add(
             pool_info_datum.pool_asset.policy_id,
             pool_info_datum.pool_asset.asset_name,
-            principal_amount * pool_info_datum.pool_asset_decimals,
+            principal_amount,
           ),
       datum: NoDatum,
       reference_script: None,
@@ -2626,7 +2622,7 @@ test pool_spend_apply_borrow_non_ada() {
         |> assets.add(
             t_collateral_asset.policy_id,
             t_collateral_asset.asset_name,
-            collateral_amount * t_collateral_info.collateral_decimals,
+            collateral_amount,
           )
         |> assets.add(
             pool_info_datum.vault_authtoken.policy_id,
@@ -2738,17 +2734,17 @@ test pool_spend_apply_borrow_ada_collateral() {
         reference_script: None,
       },
     }
-  let principal_amount = 10
+  let principal_amount = 10 * pool_info_datum.pool_asset_decimals
   let pool_out_datum =
     PoolDatum {
       pool_id: t_pool_id,
       total_supplied: 60_000_000,
-      total_borrowed: principal_amount * pool_info_datum.pool_asset_decimals,
+      total_borrowed: principal_amount,
       reserve: 1_000_000,
       total_ctoken: 50,
     }
   let batcher_fee = 300_000
-  let collateral_amount = 40
+  let collateral_amount = 40 * t_collateral_info.collateral_decimals
   let owner_pkh = #"6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c8f2b"
   let owner_stake_key =
     Some(#"c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3")
@@ -2770,7 +2766,7 @@ test pool_spend_apply_borrow_ada_collateral() {
         |> assets.add(
             pool_info_datum.pool_asset.policy_id,
             pool_info_datum.pool_asset.asset_name,
-            -principal_amount * pool_info_datum.pool_asset_decimals,
+            -principal_amount,
           ),
       datum: InlineDatum(pool_out_datum),
       reference_script: None,
@@ -2791,7 +2787,7 @@ test pool_spend_apply_borrow_ada_collateral() {
           |> assets.add(
               t_collateral_asset_ada.policy_id,
               t_collateral_asset_ada.asset_name,
-              collateral_amount * t_collateral_info.collateral_decimals,
+              collateral_amount,
             ),
         datum: InlineDatum(order_datum),
         reference_script: None,
@@ -2811,7 +2807,7 @@ test pool_spend_apply_borrow_ada_collateral() {
         |> assets.add(
             pool_info_datum.pool_asset.policy_id,
             pool_info_datum.pool_asset.asset_name,
-            principal_amount * pool_info_datum.pool_asset_decimals,
+            principal_amount,
           ),
       datum: NoDatum,
       reference_script: None,
@@ -2845,7 +2841,7 @@ test pool_spend_apply_borrow_ada_collateral() {
         |> assets.add(
             t_collateral_asset_ada.policy_id,
             t_collateral_asset_ada.asset_name,
-            collateral_amount * t_collateral_info.collateral_decimals,
+            collateral_amount,
           )
         |> assets.add(
             pool_info_datum.vault_authtoken.policy_id,
@@ -2957,17 +2953,17 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null() {
         reference_script: None,
       },
     }
-  let principal_amount = 10
+  let principal_amount = 10 * pool_info_datum.pool_asset_decimals
   let pool_out_datum =
     PoolDatum {
       pool_id: t_pool_id,
       total_supplied: 60_000_000,
-      total_borrowed: pool_datum.total_borrowed + principal_amount * pool_info_datum.pool_asset_decimals,
+      total_borrowed: pool_datum.total_borrowed + principal_amount,
       reserve: 1_000_000,
       total_ctoken: 50,
     }
   let batcher_fee = 300_000
-  let collateral_amount = 40
+  let collateral_amount = 40 * t_collateral_info.collateral_decimals
   let owner_pkh = #"6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c8f2b"
   let owner_stake_key =
     Some(#"c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3")
@@ -2989,7 +2985,7 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null() {
         |> assets.add(
             pool_info_datum.pool_asset.policy_id,
             pool_info_datum.pool_asset.asset_name,
-            -principal_amount * pool_info_datum.pool_asset_decimals,
+            -principal_amount,
           ),
       datum: InlineDatum(pool_out_datum),
       reference_script: None,
@@ -3010,7 +3006,7 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null() {
           |> assets.add(
               t_collateral_asset.policy_id,
               t_collateral_asset.asset_name,
-              collateral_amount * t_collateral_info.collateral_decimals,
+              collateral_amount,
             ),
         datum: InlineDatum(order_datum),
         reference_script: None,
@@ -3030,7 +3026,7 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null() {
         |> assets.add(
             pool_info_datum.pool_asset.policy_id,
             pool_info_datum.pool_asset.asset_name,
-            principal_amount * pool_info_datum.pool_asset_decimals,
+            principal_amount,
           ),
       datum: NoDatum,
       reference_script: None,
@@ -3064,7 +3060,7 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null() {
         |> assets.add(
             t_collateral_asset.policy_id,
             t_collateral_asset.asset_name,
-            collateral_amount * t_collateral_info.collateral_decimals,
+            collateral_amount,
           )
         |> assets.add(
             pool_info_datum.vault_authtoken.policy_id,
@@ -3176,17 +3172,17 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null_non_ada() {
         reference_script: None,
       },
     }
-  let principal_amount = 10
+  let principal_amount = 10 * pool_info_datum.pool_asset_decimals
   let pool_out_datum =
     PoolDatum {
       pool_id: t_pool_id,
       total_supplied: 60_000_000,
-      total_borrowed: pool_datum.total_borrowed + principal_amount * pool_info_datum.pool_asset_decimals,
+      total_borrowed: pool_datum.total_borrowed + principal_amount,
       reserve: 1_000_000,
       total_ctoken: 50,
     }
   let batcher_fee = 300_000
-  let collateral_amount = 40
+  let collateral_amount = 40 * t_collateral_info.collateral_decimals
   let owner_pkh = #"6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c8f2b"
   let owner_stake_key =
     Some(#"c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3")
@@ -3208,7 +3204,7 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null_non_ada() {
         |> assets.add(
             pool_info_datum.pool_asset.policy_id,
             pool_info_datum.pool_asset.asset_name,
-            -principal_amount * pool_info_datum.pool_asset_decimals,
+            -principal_amount,
           ),
       datum: InlineDatum(pool_out_datum),
       reference_script: None,
@@ -3229,7 +3225,7 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null_non_ada() {
           |> assets.add(
               t_collateral_asset.policy_id,
               t_collateral_asset.asset_name,
-              collateral_amount * t_collateral_info.collateral_decimals,
+              collateral_amount,
             ),
         datum: InlineDatum(order_datum),
         reference_script: None,
@@ -3249,7 +3245,7 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null_non_ada() {
         |> assets.add(
             pool_info_datum.pool_asset.policy_id,
             pool_info_datum.pool_asset.asset_name,
-            principal_amount * pool_info_datum.pool_asset_decimals,
+            principal_amount,
           ),
       datum: NoDatum,
       reference_script: None,
@@ -3283,7 +3279,7 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null_non_ada() {
         |> assets.add(
             t_collateral_asset.policy_id,
             t_collateral_asset.asset_name,
-            collateral_amount * t_collateral_info.collateral_decimals,
+            collateral_amount,
           )
         |> assets.add(
             pool_info_datum.vault_authtoken.policy_id,
@@ -3416,7 +3412,7 @@ test pool_spend_apply_repay() {
       borrow_id,
       owner_pkh,
       owner_stake_key,
-      collateral_amount: 40,
+      collateral_amount: 40 * t_collateral_info.collateral_decimals,
       collateral_asset: t_collateral_asset,
       collateral_decimals: t_collateral_info.collateral_decimals,
       interest_rate,
@@ -3437,7 +3433,7 @@ test pool_spend_apply_repay() {
         |> assets.add(
             t_collateral_asset.policy_id,
             t_collateral_asset.asset_name,
-            vault_datum.collateral_amount * t_collateral_info.collateral_decimals,
+            vault_datum.collateral_amount,
           )
         |> assets.add(
             pool_info_datum.vault_authtoken.policy_id,
@@ -3450,20 +3446,19 @@ test pool_spend_apply_repay() {
   let vault_input = Input { output_reference: vault_outref, output: vault_out }
   let end_valid_time_range = vault_datum.start_time + 180 * 24 * 60 * 60 * 1000
   let payment =
-    vault_datum.principal * pool_info_datum.pool_asset_decimals * (
+    vault_datum.principal * (
       multiplier + vault_datum.interest_rate * (
         end_valid_time_range - vault_datum.start_time
       ) / year_in_milliseconds
     ) / multiplier
-  let profit =
-    payment - vault_datum.principal * pool_info_datum.pool_asset_decimals
+  let profit = payment - vault_datum.principal
   let add_to_reserve =
     profit * pool_info_datum.reserve_factor_percentage / multiplier
   let pool_out_datum =
     PoolDatum {
       pool_id: t_pool_id,
       total_supplied: 60_000_000 + ( profit - add_to_reserve ),
-      total_borrowed: pool_datum.total_borrowed - vault_datum.principal * pool_info_datum.pool_asset_decimals,
+      total_borrowed: pool_datum.total_borrowed - vault_datum.principal,
       reserve: pool_datum.reserve + add_to_reserve,
       total_ctoken: 50,
     }
@@ -3524,7 +3519,7 @@ test pool_spend_apply_repay() {
         |> assets.add(
             vault_datum.collateral_asset.policy_id,
             vault_datum.collateral_asset.asset_name,
-            vault_datum.collateral_amount * t_collateral_info.collateral_decimals,
+            vault_datum.collateral_amount,
           ),
       datum: NoDatum,
       reference_script: None,
@@ -3652,7 +3647,7 @@ test pool_spend_apply_repay_non_ada() {
       borrow_id,
       owner_pkh,
       owner_stake_key,
-      collateral_amount: 40,
+      collateral_amount: 40 * t_collateral_info.collateral_decimals,
       collateral_asset: t_collateral_asset,
       collateral_decimals: t_collateral_info.collateral_decimals,
       interest_rate,
@@ -3686,20 +3681,19 @@ test pool_spend_apply_repay_non_ada() {
   let vault_input = Input { output_reference: vault_outref, output: vault_out }
   let end_valid_time_range = vault_datum.start_time + 180 * 24 * 60 * 60 * 1000
   let payment =
-    vault_datum.principal * pool_info_datum.pool_asset_decimals * (
+    vault_datum.principal * (
       multiplier + vault_datum.interest_rate * (
         end_valid_time_range - vault_datum.start_time
       ) / year_in_milliseconds
     ) / multiplier
-  let profit =
-    payment - vault_datum.principal * pool_info_datum.pool_asset_decimals
+  let profit = payment - vault_datum.principal
   let add_to_reserve =
     profit * pool_info_datum.reserve_factor_percentage / multiplier
   let pool_out_datum =
     PoolDatum {
       pool_id: t_pool_id,
       total_supplied: 60_000_000 + ( profit - add_to_reserve ),
-      total_borrowed: pool_datum.total_borrowed - vault_datum.principal * pool_info_datum.pool_asset_decimals,
+      total_borrowed: pool_datum.total_borrowed - vault_datum.principal,
       reserve: pool_datum.reserve + add_to_reserve,
       total_ctoken: 50,
     }
@@ -3922,20 +3916,19 @@ test pool_spend_apply_repay_ada_collateral() {
   let vault_input = Input { output_reference: vault_outref, output: vault_out }
   let end_valid_time_range = vault_datum.start_time + 180 * 24 * 60 * 60 * 1000
   let payment =
-    vault_datum.principal * pool_info_datum.pool_asset_decimals * (
+    vault_datum.principal * (
       multiplier + vault_datum.interest_rate * (
         end_valid_time_range - vault_datum.start_time
       ) / year_in_milliseconds
     ) / multiplier
-  let profit =
-    payment - vault_datum.principal * pool_info_datum.pool_asset_decimals
+  let profit = payment - vault_datum.principal
   let add_to_reserve =
     profit * pool_info_datum.reserve_factor_percentage / multiplier
   let pool_out_datum =
     PoolDatum {
       pool_id: t_pool_id,
       total_supplied: 60_000_000 + ( profit - add_to_reserve ),
-      total_borrowed: pool_datum.total_borrowed - vault_datum.principal * pool_info_datum.pool_asset_decimals,
+      total_borrowed: pool_datum.total_borrowed - vault_datum.principal,
       reserve: pool_datum.reserve + add_to_reserve,
       total_ctoken: 50,
     }
@@ -4158,20 +4151,19 @@ test pool_spend_apply_liquidate() {
   let vault_input = Input { output_reference: vault_outref, output: vault_out }
   let end_valid_time_range = vault_datum.start_time + 180 * 24 * 60 * 60 * 1000
   let payment =
-    vault_datum.principal * pool_info_datum.pool_asset_decimals * (
+    vault_datum.principal * (
       multiplier + vault_datum.interest_rate * (
         end_valid_time_range - vault_datum.start_time
       ) / year_in_milliseconds
     ) / multiplier
-  let profit =
-    payment - vault_datum.principal * pool_info_datum.pool_asset_decimals
+  let profit = payment - vault_datum.principal
   let add_to_reserve =
     profit * pool_info_datum.reserve_factor_percentage / multiplier
   let pool_out_datum =
     PoolDatum {
       pool_id: t_pool_id,
       total_supplied: 60_000_000 + ( profit - add_to_reserve ),
-      total_borrowed: pool_datum.total_borrowed - vault_datum.principal * pool_info_datum.pool_asset_decimals,
+      total_borrowed: pool_datum.total_borrowed - vault_datum.principal,
       reserve: pool_datum.reserve + add_to_reserve,
       total_ctoken: 50,
     }
@@ -4374,20 +4366,19 @@ test pool_spend_apply_liquidate_non_ada() {
   let vault_input = Input { output_reference: vault_outref, output: vault_out }
   let end_valid_time_range = vault_datum.start_time + 180 * 24 * 60 * 60 * 1000
   let payment =
-    vault_datum.principal * pool_info_datum.pool_asset_decimals * (
+    vault_datum.principal * (
       multiplier + vault_datum.interest_rate * (
         end_valid_time_range - vault_datum.start_time
       ) / year_in_milliseconds
     ) / multiplier
-  let profit =
-    payment - vault_datum.principal * pool_info_datum.pool_asset_decimals
+  let profit = payment - vault_datum.principal
   let add_to_reserve =
     profit * pool_info_datum.reserve_factor_percentage / multiplier
   let pool_out_datum =
     PoolDatum {
       pool_id: t_pool_id,
       total_supplied: 60_000_000 + ( profit - add_to_reserve ),
-      total_borrowed: pool_datum.total_borrowed - vault_datum.principal * pool_info_datum.pool_asset_decimals,
+      total_borrowed: pool_datum.total_borrowed - vault_datum.principal,
       reserve: pool_datum.reserve + add_to_reserve,
       total_ctoken: 50,
     }
@@ -4590,20 +4581,19 @@ test pool_spend_apply_liquidate_ada_collateral() {
   let vault_input = Input { output_reference: vault_outref, output: vault_out }
   let end_valid_time_range = vault_datum.start_time + 180 * 24 * 60 * 60 * 1000
   let payment =
-    vault_datum.principal * pool_info_datum.pool_asset_decimals * (
+    vault_datum.principal * (
       multiplier + vault_datum.interest_rate * (
         end_valid_time_range - vault_datum.start_time
       ) / year_in_milliseconds
     ) / multiplier
-  let profit =
-    payment - vault_datum.principal * pool_info_datum.pool_asset_decimals
+  let profit = payment - vault_datum.principal
   let add_to_reserve =
     profit * pool_info_datum.reserve_factor_percentage / multiplier
   let pool_out_datum =
     PoolDatum {
       pool_id: t_pool_id,
       total_supplied: 60_000_000 + ( profit - add_to_reserve ),
-      total_borrowed: pool_datum.total_borrowed - vault_datum.principal * pool_info_datum.pool_asset_decimals,
+      total_borrowed: pool_datum.total_borrowed - vault_datum.principal,
       reserve: pool_datum.reserve + add_to_reserve,
       total_ctoken: 50,
     }
