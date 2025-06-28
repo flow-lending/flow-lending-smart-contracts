@@ -91,6 +91,16 @@ pub fn cal_interest_rate(u: Int, pool_info_datum: PoolInfoDatum) -> Int {
   }
 }
 
+pub fn cal_ltv(
+  payment: Int,
+  c_amount: Int,
+  c_decimals: Int,
+  o_price: Int,
+  o_decimals: Int,
+) -> Int {
+  payment * multiplier * o_decimals / ( c_amount * c_decimals * o_price )
+}
+
 pub fn count_input_orders(
   inputs: List<Input>,
   order_script_hash: ByteArray,

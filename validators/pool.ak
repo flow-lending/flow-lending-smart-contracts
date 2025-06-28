@@ -275,8 +275,8 @@ use types.{
   OrderDatum, PoolDatum, PoolInfoDatum, PoolParams, VaultDatum,
 }
 use utils.{
-  cal_interest_rate, check_correct_input_payment_credential, count_input_orders,
-  count_input_orders_with_auth_token, find_license_deadline,
+  cal_interest_rate, cal_ltv, check_correct_input_payment_credential,
+  count_input_orders, count_input_orders_with_auth_token, find_license_deadline,
   find_posix_time_range, multiplier, oracle_decimals, year_in_milliseconds,
 }
 
@@ -781,8 +781,12 @@ validator pool(params: PoolParams) {
                   },
                 )
               let ltv =
-                o_principal * pool_info_datum.pool_asset_decimals * multiplier / (
-                  o_collateral_amount * collateral_info.collateral_decimals * oracle_datum.price / oracle_decimals
+                cal_ltv(
+                  o_principal * pool_info_datum.pool_asset_decimals,
+                  o_collateral_amount,
+                  collateral_info.collateral_decimals,
+                  oracle_datum.price,
+                  oracle_decimals,
                 )
               expect ltv <= collateral_info.liquidation_threshold
               expect ltv <= collateral_info.max_borrow_ltv
@@ -1046,8 +1050,12 @@ validator pool(params: PoolParams) {
                   ) / year_in_milliseconds
                 ) / multiplier
               let ltv =
-                payment * multiplier / (
-                  vault_datum.collateral_amount * collateral_info.collateral_decimals * oracle_datum.price / oracle_decimals
+                cal_ltv(
+                  payment,
+                  vault_datum.collateral_amount,
+                  collateral_info.collateral_decimals,
+                  oracle_datum.price,
+                  oracle_decimals,
                 )
               expect ltv < collateral_info.liquidation_threshold
               let user_address =
@@ -1286,8 +1294,12 @@ validator pool(params: PoolParams) {
                   ) / year_in_milliseconds
                 ) / multiplier
               let ltv =
-                payment * multiplier / (
-                  vault_datum.collateral_amount * oracle_datum.price
+                cal_ltv(
+                  payment,
+                  vault_datum.collateral_amount,
+                  collateral_info.collateral_decimals,
+                  oracle_datum.price,
+                  oracle_decimals,
                 )
               expect ltv >= collateral_info.liquidation_threshold
               let vault_address =
