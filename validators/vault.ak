@@ -197,8 +197,6 @@ validator vault(params: VaultParams) {
           own_input_datum.owner_stake_key == own_output_datum.owner_stake_key
         expect
           own_input_datum.collateral_asset == own_output_datum.collateral_asset
-        expect
-          own_input_datum.collateral_decimals == own_output_datum.collateral_decimals
         expect own_input_datum.interest_rate == own_output_datum.interest_rate
         expect own_input_datum.principal == own_output_datum.principal
         expect own_input_datum.start_time == own_output_datum.start_time
@@ -209,7 +207,7 @@ validator vault(params: VaultParams) {
             own_input.output.value,
             own_input_datum.collateral_asset.policy_id,
             own_input_datum.collateral_asset.asset_name,
-            add_amount * own_input_datum.collateral_decimals,
+            add_amount,
           )
         expect assets.match(own_output.value, expected_output_value, >=)
         list.has(extra_signatories, own_input_datum.owner_pkh)
@@ -276,7 +274,6 @@ test vault_spend_add_collateral() {
   let owner_stake_key =
     Some(#"c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3")
   let collateral_amount = 1000
-  let collateral_decimals = 1000000
   let interest_rate = 1000
   let principal_amount = 100
   let add_amount = 100
@@ -292,7 +289,6 @@ test vault_spend_add_collateral() {
       owner_stake_key,
       collateral_amount,
       collateral_asset: t_collateral_asset,
-      collateral_decimals: 1_000_000,
       interest_rate,
       start_time: 1727453227635,
       principal: principal_amount,
@@ -313,7 +309,7 @@ test vault_spend_add_collateral() {
         |> assets.add(
             t_collateral_asset.policy_id,
             t_collateral_asset.asset_name,
-            vault_datum.collateral_amount * collateral_decimals,
+            vault_datum.collateral_amount,
           )
         |> assets.add(vault_authtoken_policy_id, vault_authtoken_asset_name, 1),
       datum: InlineDatum(vault_datum),
@@ -328,7 +324,6 @@ test vault_spend_add_collateral() {
       owner_stake_key,
       collateral_amount: collateral_amount + add_amount,
       collateral_asset: t_collateral_asset,
-      collateral_decimals: vault_datum.collateral_decimals,
       interest_rate,
       start_time: 1727453227635,
       principal: principal_amount,
@@ -340,7 +335,7 @@ test vault_spend_add_collateral() {
         |> assets.add(
             t_collateral_asset.policy_id,
             t_collateral_asset.asset_name,
-            ( vault_datum.collateral_amount + add_amount ) * collateral_decimals,
+            vault_datum.collateral_amount + add_amount,
           )
         |> assets.add(vault_authtoken_policy_id, vault_authtoken_asset_name, 1),
       datum: InlineDatum(output_vault_datum),
@@ -395,7 +390,6 @@ test vault_spend_add_collateral_ada() {
   let owner_stake_key =
     Some(#"c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3")
   let collateral_amount = 1000
-  let collateral_decimals = 1000000
   let interest_rate = 1000
   let principal_amount = 100
   let add_amount = 100
@@ -411,7 +405,6 @@ test vault_spend_add_collateral_ada() {
       owner_stake_key,
       collateral_amount,
       collateral_asset: t_collateral_asset_ada,
-      collateral_decimals: 1_000_000,
       interest_rate,
       start_time: 1727453227635,
       principal: principal_amount,
@@ -432,7 +425,7 @@ test vault_spend_add_collateral_ada() {
         |> assets.add(
             t_collateral_asset_ada.policy_id,
             t_collateral_asset_ada.asset_name,
-            vault_datum.collateral_amount * collateral_decimals,
+            vault_datum.collateral_amount,
           )
         |> assets.add(vault_authtoken_policy_id, vault_authtoken_asset_name, 1),
       datum: InlineDatum(vault_datum),
@@ -447,7 +440,6 @@ test vault_spend_add_collateral_ada() {
       owner_stake_key,
       collateral_amount: collateral_amount + add_amount,
       collateral_asset: t_collateral_asset_ada,
-      collateral_decimals: vault_datum.collateral_decimals,
       interest_rate,
       start_time: 1727453227635,
       principal: principal_amount,
@@ -459,7 +451,7 @@ test vault_spend_add_collateral_ada() {
         |> assets.add(
             t_collateral_asset_ada.policy_id,
             t_collateral_asset_ada.asset_name,
-            ( vault_datum.collateral_amount + add_amount ) * collateral_decimals,
+            vault_datum.collateral_amount + add_amount,
           )
         |> assets.add(vault_authtoken_policy_id, vault_authtoken_asset_name, 1),
       datum: InlineDatum(output_vault_datum),

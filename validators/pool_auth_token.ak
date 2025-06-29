@@ -48,7 +48,6 @@ pub type MintRedeemer {
 
 fn is_pool_info_datum_valid(pool_info_datum: PoolInfoDatum) -> Bool {
   expect pool_info_datum.envelope_amount > 0
-  expect pool_info_datum.pool_asset_decimals > 0
   expect pool_info_datum.reserve_factor_percentage > 0
   expect pool_info_datum.kink > 0
   expect pool_info_datum.base_rate > 0
@@ -60,7 +59,6 @@ fn is_pool_info_datum_valid(pool_info_datum: PoolInfoDatum) -> Bool {
     fn(collateral_info, acc) {
       expect collateral_info.liquidation_threshold > 0
       expect collateral_info.max_borrow_ltv > 0
-      expect collateral_info.collateral_decimals > 0
       acc
     },
   )

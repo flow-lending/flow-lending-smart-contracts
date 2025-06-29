@@ -12,7 +12,6 @@ pub type Asset {
 
 pub type CollateralInfo {
   collateral_asset: Asset,
-  collateral_decimals: Int,
   oracle_nft: Asset,
   liquidation_threshold: Int,
   max_borrow_ltv: Int,
@@ -22,7 +21,6 @@ pub type PoolInfoDatum {
   pool_id: OutputReference,
   envelope_amount: Int,
   pool_asset: Asset,
-  pool_asset_decimals: Int,
   ctoken: Asset,
   vault_authtoken: Asset,
   batcher_policy_id: ByteArray,
@@ -98,7 +96,6 @@ pub type VaultDatum {
   owner_stake_key: Option<PubKeyHash>,
   collateral_amount: Int,
   collateral_asset: Asset,
-  collateral_decimals: Int,
   interest_rate: Int,
   start_time: Int,
   principal: Int,

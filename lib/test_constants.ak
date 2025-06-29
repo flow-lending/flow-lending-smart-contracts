@@ -50,7 +50,6 @@ pub const t_oracle_nft =
 pub const t_collateral_info =
   CollateralInfo {
     collateral_asset: t_collateral_asset,
-    collateral_decimals: 1_000_000,
     oracle_nft: t_oracle_nft,
     liquidation_threshold: 7_500,
     max_borrow_ltv: 5_000,
@@ -59,7 +58,6 @@ pub const t_collateral_info =
 pub const t_collateral_info_ada =
   CollateralInfo {
     collateral_asset: t_collateral_asset_ada,
-    collateral_decimals: 1_000_000,
     oracle_nft: t_oracle_nft,
     liquidation_threshold: 7_500,
     max_borrow_ltv: 5_000,
@@ -79,7 +77,6 @@ pub const t_pool_info_datum =
       policy_id: assets.ada_policy_id,
       asset_name: assets.ada_asset_name,
     },
-    pool_asset_decimals: 1_000_000,
     ctoken: Asset {
       policy_id: #"8c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e664",
       asset_name: string.to_bytearray(@"fADA"),
@@ -108,7 +105,6 @@ pub const t_pool_info_datum_non_ada =
       policy_id: #"c4252d86702c2f4c2e49e6648c7cffe3c8f2b6b7d779788f50f4c9f9",
       asset_name: #"f4c2e49e664c4252d86702c2",
     },
-    pool_asset_decimals: 1_000_000,
     ctoken: Asset {
       policy_id: #"8c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e664",
       asset_name: string.to_bytearray(@"fNonADA"),
@@ -137,7 +133,6 @@ pub const t_pool_info_datum_ada_collateral =
       policy_id: #"c4252d86702c2f4c2e49e6648c7cffe3c8f2b6b7d779788f50f4c9f9",
       asset_name: #"f4c2e49e664c4252d86702c2",
     },
-    pool_asset_decimals: 1_000_000,
     ctoken: Asset {
       policy_id: #"8c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e664",
       asset_name: string.to_bytearray(@"fNonADA"),

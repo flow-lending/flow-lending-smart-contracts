@@ -80,7 +80,6 @@ Each `VaultDatum` enables per-loan interest accrual, collateral enforcement, and
   - `pool_id`: `OutputReference` – Pool identifier.
   - `envelope_amount`: `Int` – Minimum batch size for execution.
   - `pool_asset`: `Asset` – Borrowed asset (debt token).
-  - `pool_asset_decimals`: `Int` – Asset decimal precision.
   - `ctoken`: `Asset` – cToken for depositors.
   - `vault_authtoken`: `Asset` – Vault authorization token.
   - `batcher_policy_id`: `ByteArray` – Restricts order processing to authorized batchers.
