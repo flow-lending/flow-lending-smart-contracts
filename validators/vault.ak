@@ -134,7 +134,7 @@ use cardano/transaction.{
 use pool.{AdminOperation, ApplyLiquidate, ApplyRepay, PoolRedeemer}
 use test_constants.{
   t_collateral_asset, t_collateral_asset_ada, t_pool_id, t_pool_nft,
-  t_valut_authtoken,
+  t_vault_authtoken,
 }
 use types.{Asset, PoolDatum, VaultDatum}
 
@@ -226,8 +226,8 @@ test assets_match() {
   let in_value =
     assets.from_lovelace(30)
       |> assets.add(
-          t_valut_authtoken.policy_id,
-          t_valut_authtoken.asset_name,
+          t_vault_authtoken.policy_id,
+          t_vault_authtoken.asset_name,
           1,
         )
       |> assets.add(
@@ -239,8 +239,8 @@ test assets_match() {
   let out_value =
     assets.from_lovelace(40)
       |> assets.add(
-          t_valut_authtoken.policy_id,
-          t_valut_authtoken.asset_name,
+          t_vault_authtoken.policy_id,
+          t_vault_authtoken.asset_name,
           1,
         )
       |> assets.add(

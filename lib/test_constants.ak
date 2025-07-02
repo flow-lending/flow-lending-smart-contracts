@@ -63,7 +63,7 @@ pub const t_collateral_info_ada =
     max_borrow_ltv: 5_000,
   }
 
-pub const t_valut_authtoken =
+pub const t_vault_authtoken =
   Asset {
     policy_id: #"8c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e664",
     asset_name: string.to_bytearray(@"fVault"),
@@ -81,7 +81,7 @@ pub const t_pool_info_datum =
       policy_id: #"8c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e664",
       asset_name: string.to_bytearray(@"fADA"),
     },
-    vault_authtoken: t_valut_authtoken,
+    vault_authtoken: t_vault_authtoken,
     batcher_policy_id: license_symbol,
     order_script_hash: #"8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c",
     vault_script_hash: #"702c2f4c2e49e6648c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86",
@@ -109,7 +109,7 @@ pub const t_pool_info_datum_non_ada =
       policy_id: #"8c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e664",
       asset_name: string.to_bytearray(@"fNonADA"),
     },
-    vault_authtoken: t_valut_authtoken,
+    vault_authtoken: t_vault_authtoken,
     batcher_policy_id: license_symbol,
     order_script_hash: #"6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c8f2b",
     vault_script_hash: #"702c2f4c2e49e6648c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86",
@@ -137,7 +137,7 @@ pub const t_pool_info_datum_ada_collateral =
       policy_id: #"8c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e664",
       asset_name: string.to_bytearray(@"fNonADA"),
     },
-    vault_authtoken: t_valut_authtoken,
+    vault_authtoken: t_vault_authtoken,
     batcher_policy_id: license_symbol,
     order_script_hash: #"8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c",
     vault_script_hash: #"702c2f4c2e49e6648c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86",
