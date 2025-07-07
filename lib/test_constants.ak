@@ -51,6 +51,7 @@ pub const t_collateral_info =
   CollateralInfo {
     collateral_asset: t_collateral_asset,
     oracle_nft: t_oracle_nft,
+    oracle_decimals: 1_000_000,
     liquidation_threshold: 7_500,
     max_borrow_ltv: 5_000,
   }
@@ -59,6 +60,7 @@ pub const t_collateral_info_ada =
   CollateralInfo {
     collateral_asset: t_collateral_asset_ada,
     oracle_nft: t_oracle_nft,
+    oracle_decimals: 1_000_000,
     liquidation_threshold: 7_500,
     max_borrow_ltv: 5_000,
   }

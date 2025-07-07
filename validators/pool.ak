@@ -277,7 +277,7 @@ use types.{
 use utils.{
   cal_interest_rate, cal_ltv, check_correct_input_payment_credential,
   count_input_orders, count_input_orders_with_auth_token, find_license_deadline,
-  find_posix_time_range, multiplier, oracle_decimals, year_in_milliseconds,
+  find_posix_time_range, multiplier, year_in_milliseconds,
 }
 
 pub type PoolRedeemer {
@@ -787,7 +787,7 @@ validator pool(params: PoolParams) {
                   o_principal,
                   o_collateral_amount,
                   oracle_datum.price,
-                  oracle_decimals,
+                  collateral_info.oracle_decimals,
                 )
               expect ltv <= collateral_info.liquidation_threshold
               expect ltv <= collateral_info.max_borrow_ltv
@@ -1052,7 +1052,7 @@ validator pool(params: PoolParams) {
                   payment,
                   vault_datum.collateral_amount,
                   oracle_datum.price,
-                  oracle_decimals,
+                  collateral_info.oracle_decimals,
                 )
               expect ltv < collateral_info.liquidation_threshold
               let user_address =
@@ -1294,7 +1294,7 @@ validator pool(params: PoolParams) {
                   payment,
                   vault_datum.collateral_amount,
                   oracle_datum.price,
-                  oracle_decimals,
+                  collateral_info.oracle_decimals,
                 )
               expect ltv >= collateral_info.liquidation_threshold
               let vault_address =
