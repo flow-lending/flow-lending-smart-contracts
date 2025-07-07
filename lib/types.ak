@@ -13,7 +13,6 @@ pub type Asset {
 pub type CollateralInfo {
   collateral_asset: Asset,
   oracle_nft: Asset,
-  oracle_decimals: Int,
   liquidation_threshold: Int,
   max_borrow_ltv: Int,
 }
@@ -109,5 +108,6 @@ pub type VaultRedeemer {
 
 pub type OracleDatum {
   price: Int,
+  decimals: Int,
   updated_at: Int,
 }

@@ -787,7 +787,7 @@ validator pool(params: PoolParams) {
                   o_principal,
                   o_collateral_amount,
                   oracle_datum.price,
-                  collateral_info.oracle_decimals,
+                  oracle_datum.decimals,
                 )
               expect ltv <= collateral_info.liquidation_threshold
               expect ltv <= collateral_info.max_borrow_ltv
@@ -1052,7 +1052,7 @@ validator pool(params: PoolParams) {
                   payment,
                   vault_datum.collateral_amount,
                   oracle_datum.price,
-                  collateral_info.oracle_decimals,
+                  oracle_datum.decimals,
                 )
               expect ltv < collateral_info.liquidation_threshold
               let user_address =
@@ -1294,7 +1294,7 @@ validator pool(params: PoolParams) {
                   payment,
                   vault_datum.collateral_amount,
                   oracle_datum.price,
-                  collateral_info.oracle_decimals,
+                  oracle_datum.decimals,
                 )
               expect ltv >= collateral_info.liquidation_threshold
               let vault_address =
@@ -2273,7 +2273,12 @@ test pool_spend_apply_borrow() {
         reference_script: None,
       },
     }
-  let oracle_datum = OracleDatum { price: 500_000, updated_at: 1727453227635 }
+  let oracle_datum =
+    OracleDatum {
+      price: 500_000,
+      decimals: 1_000_000,
+      updated_at: 1727453227635,
+    }
   let oracle_ref =
     OutputReference {
       transaction_id: #"f99b85b4971034feee28d07f157faf99b850",
@@ -2491,7 +2496,12 @@ test pool_spend_apply_borrow_non_ada() {
         reference_script: None,
       },
     }
-  let oracle_datum = OracleDatum { price: 500_000, updated_at: 1727453227635 }
+  let oracle_datum =
+    OracleDatum {
+      price: 500_000,
+      decimals: 1_000_000,
+      updated_at: 1727453227635,
+    }
   let oracle_ref =
     OutputReference {
       transaction_id: #"f99b85b4971034feee28d07f157faf99b850",
@@ -2709,7 +2719,12 @@ test pool_spend_apply_borrow_ada_collateral() {
         reference_script: None,
       },
     }
-  let oracle_datum = OracleDatum { price: 500_000, updated_at: 1727453227635 }
+  let oracle_datum =
+    OracleDatum {
+      price: 500_000,
+      decimals: 1_000_000,
+      updated_at: 1727453227635,
+    }
   let oracle_ref =
     OutputReference {
       transaction_id: #"f99b85b4971034feee28d07f157faf99b850",
@@ -2927,7 +2942,12 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null() {
         reference_script: None,
       },
     }
-  let oracle_datum = OracleDatum { price: 500_000, updated_at: 1727453227635 }
+  let oracle_datum =
+    OracleDatum {
+      price: 500_000,
+      decimals: 1_000_000,
+      updated_at: 1727453227635,
+    }
   let oracle_ref =
     OutputReference {
       transaction_id: #"f99b85b4971034feee28d07f157faf99b850",
@@ -3145,7 +3165,12 @@ test pool_spend_apply_borrow_init_total_borrowed_not_null_non_ada() {
         reference_script: None,
       },
     }
-  let oracle_datum = OracleDatum { price: 500_000, updated_at: 1727453227635 }
+  let oracle_datum =
+    OracleDatum {
+      price: 500_000,
+      decimals: 1_000_000,
+      updated_at: 1727453227635,
+    }
   let oracle_ref =
     OutputReference {
       transaction_id: #"f99b85b4971034feee28d07f157faf99b850",
@@ -3363,7 +3388,12 @@ test pool_spend_apply_repay() {
         reference_script: None,
       },
     }
-  let oracle_datum = OracleDatum { price: 500_000, updated_at: 1727453227635 }
+  let oracle_datum =
+    OracleDatum {
+      price: 500_000,
+      decimals: 1_000_000,
+      updated_at: 1727453227635,
+    }
   let oracle_ref =
     OutputReference {
       transaction_id: #"f99b85b4971034feee28d07f157faf99b850",
@@ -3597,7 +3627,12 @@ test pool_spend_apply_repay_non_ada() {
         reference_script: None,
       },
     }
-  let oracle_datum = OracleDatum { price: 500_000, updated_at: 1727453227635 }
+  let oracle_datum =
+    OracleDatum {
+      price: 500_000,
+      decimals: 1_000_000,
+      updated_at: 1727453227635,
+    }
   let oracle_ref =
     OutputReference {
       transaction_id: #"f99b85b4971034feee28d07f157faf99b850",
@@ -3831,7 +3866,12 @@ test pool_spend_apply_repay_ada_collateral() {
         reference_script: None,
       },
     }
-  let oracle_datum = OracleDatum { price: 500_000, updated_at: 1727453227635 }
+  let oracle_datum =
+    OracleDatum {
+      price: 500_000,
+      decimals: 1_000_000,
+      updated_at: 1727453227635,
+    }
   let oracle_ref =
     OutputReference {
       transaction_id: #"f99b85b4971034feee28d07f157faf99b850",
@@ -4065,7 +4105,12 @@ test pool_spend_apply_liquidate() {
         reference_script: None,
       },
     }
-  let oracle_datum = OracleDatum { price: 100_000, updated_at: 1727453227635 }
+  let oracle_datum =
+    OracleDatum {
+      price: 100_000,
+      decimals: 1_000_000,
+      updated_at: 1727453227635,
+    }
   let oracle_ref =
     OutputReference {
       transaction_id: #"f99b85b4971034feee28d07f157faf99b850",
@@ -4279,7 +4324,12 @@ test pool_spend_apply_liquidate_non_ada() {
         reference_script: None,
       },
     }
-  let oracle_datum = OracleDatum { price: 100_000, updated_at: 1727453227635 }
+  let oracle_datum =
+    OracleDatum {
+      price: 100_000,
+      decimals: 1_000_000,
+      updated_at: 1727453227635,
+    }
   let oracle_ref =
     OutputReference {
       transaction_id: #"f99b85b4971034feee28d07f157faf99b850",
@@ -4493,7 +4543,12 @@ test pool_spend_apply_liquidate_ada_collateral() {
         reference_script: None,
       },
     }
-  let oracle_datum = OracleDatum { price: 100_000, updated_at: 1727453227635 }
+  let oracle_datum =
+    OracleDatum {
+      price: 100_000,
+      decimals: 1_000_000,
+      updated_at: 1727453227635,
+    }
   let oracle_ref =
     OutputReference {
       transaction_id: #"f99b85b4971034feee28d07f157faf99b850",
