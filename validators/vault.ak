@@ -202,6 +202,7 @@ validator vault(params: VaultParams) {
         expect own_input_datum.start_time == own_output_datum.start_time
         expect
           own_input_datum.collateral_amount + add_amount == own_output_datum.collateral_amount
+        expect add_amount > 0
         let expected_output_value =
           assets.add(
             own_input.output.value,
@@ -277,6 +278,122 @@ test vault_spend_add_collateral() {
   let interest_rate = 1000
   let principal_amount = 100
   let add_amount = 100
+  let vault_authtoken_policy_id =
+    "a0e8c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49"
+  let vault_authtoken_asset_name =
+    "a0e8c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49"
+  let vault_datum =
+    VaultDatum {
+      pool_id: t_pool_id,
+      borrow_id: order_ref,
+      owner_pkh,
+      owner_stake_key,
+      collateral_amount,
+      collateral_asset: t_collateral_asset,
+      interest_rate,
+      start_time: 1727453227635,
+      principal: principal_amount,
+    }
+  let vault_outref =
+    OutputReference {
+      transaction_id: #"b4971034feee28d07f157faf99b850",
+      output_index: 1,
+    }
+  let vault_address =
+    address.from_script(
+      #"e6648c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49",
+    )
+  let vault_out =
+    Output {
+      address: vault_address,
+      value: assets.from_lovelace(2_000_000)
+        |> assets.add(
+            t_collateral_asset.policy_id,
+            t_collateral_asset.asset_name,
+            vault_datum.collateral_amount,
+          )
+        |> assets.add(vault_authtoken_policy_id, vault_authtoken_asset_name, 1),
+      datum: InlineDatum(vault_datum),
+      reference_script: None,
+    }
+  let vault_input = Input { output_reference: vault_outref, output: vault_out }
+  let output_vault_datum =
+    VaultDatum {
+      pool_id: t_pool_id,
+      borrow_id: order_ref,
+      owner_pkh,
+      owner_stake_key,
+      collateral_amount: collateral_amount + add_amount,
+      collateral_asset: t_collateral_asset,
+      interest_rate,
+      start_time: 1727453227635,
+      principal: principal_amount,
+    }
+  let output_vault =
+    Output {
+      address: vault_address,
+      value: assets.from_lovelace(2_000_000)
+        |> assets.add(
+            t_collateral_asset.policy_id,
+            t_collateral_asset.asset_name,
+            vault_datum.collateral_amount + add_amount,
+          )
+        |> assets.add(vault_authtoken_policy_id, vault_authtoken_asset_name, 1),
+      datum: InlineDatum(output_vault_datum),
+      reference_script: None,
+    }
+  let tx =
+    Transaction {
+      inputs: [vault_input],
+      reference_inputs: [],
+      outputs: [output_vault],
+      fee: 0,
+      mint: assets.zero,
+      certificates: [],
+      withdrawals: [],
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1737453227635),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [vault_datum.owner_pkh],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+  let vault_redeemer =
+    VAddCollateral { own_input_idx: 0, own_output_idx: 0, add_amount }
+  let vault_params =
+    VaultParams {
+      admin_pkh: #"6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c8f2b",
+      pool_id: t_pool_id,
+      pool_nft: t_pool_nft,
+    }
+  vault.spend(vault_params, Some(vault_datum), vault_redeemer, vault_outref, tx)
+}
+
+test vault_spend_add_collateral_fail() fail {
+  let order_ref =
+    OutputReference {
+      transaction_id: #"b4971034feee28d07f157faf99b850",
+      output_index: 0,
+    }
+  let owner_pkh = #"6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3c8f2b"
+  let owner_stake_key =
+    Some(#"c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49e6648c7cffe3")
+  let collateral_amount = 1000
+  let interest_rate = 1000
+  let principal_amount = 100
+  let add_amount = -10
   let vault_authtoken_policy_id =
     "a0e8c7cffe3c8f2b6b7d779788f50f4c9f9c4252d86702c2f4c2e49"
   let vault_authtoken_asset_name =
